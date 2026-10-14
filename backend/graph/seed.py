@@ -197,6 +197,81 @@ APIS = [
 
 
 # =============================================================================
+# =============================================================================
+# Contract versions
+# =============================================================================
+
+# claims encodes the field names and descriptions the contract publishes.
+# Consumers register which version they accept via ACCEPTS_CONTRACT edges.
+# The compatibility check diffs proposed claims against consumer-accepted claims.
+
+CONTRACT_VERSIONS = [
+    {
+        "id": "cv-auth-v1",
+        "name": "Auth Token v1",
+        "version": "1.0",
+        "status": "active",
+        "api_id": "auth-token-api",
+        "breaking_change": False,
+        "description": "Legacy JWT contract. Uses sub, exp (unix timestamp), and roles.",
+        "claims": json.dumps({
+            "sub": "string - subject identifier",
+            "exp": "integer - unix timestamp expiry",
+            "roles": "string[] - permission roles",
+        }),
+    },
+    {
+        "id": "cv-auth-v2",
+        "name": "Auth Token v2",
+        "version": "2.0",
+        "status": "proposed",
+        "api_id": "auth-token-api",
+        "breaking_change": True,
+        "description": "Proposed breaking change. Renames sub->subject_id, exp->expires_at (ISO 8601), roles->scopes.",
+        "claims": json.dumps({
+            "subject_id": "string - subject identifier (renamed from sub)",
+            "expires_at": "string - ISO 8601 expiry (renamed from exp)",
+            "scopes": "string[] - permission scopes (renamed from roles)",
+        }),
+    },
+    {
+        "id": "cv-auth-v1-extended",
+        "name": "Auth Token v1-extended (Transitional)",
+        "version": "1.5",
+        "status": "transitional",
+        "breaking_change": False,
+        "api_id": "auth-token-api",
+        "description": "Dual-support contract. Publishes both old and new field names simultaneously.",
+        "claims": json.dumps({
+            "sub": "string - preserved for v1 compatibility",
+            "subject_id": "string - new v2 claim name",
+            "exp": "integer - preserved for v1 compatibility",
+            "expires_at": "string - new v2 claim name (ISO 8601)",
+            "roles": "string[] - preserved for v1 compatibility",
+            "scopes": "string[] - new v2 claim name",
+        }),
+    },
+]
+
+# Which ContractVersion each service currently accepts on auth-token-api
+# payment-service accepts ONLY v1 (strict - breaks on v2 immediately)
+# user-service accepts both v1 and v2 (compatible)
+# session-service accepts v1 (sensitive to expiry claim changes)
+# checkout-service accepts v1 (indirectly via payment)
+# audit-service accepts v1 (reads auth tokens from logs)
+# notification-service accepts v1 (sends auth-gated notifications)
+ACCEPTS_CONTRACT_EDGES = [
+    ("payment-service",      "cv-auth-v1"),
+    ("user-service",         "cv-auth-v1"),
+    ("user-service",         "cv-auth-v2"),
+    ("session-service",      "cv-auth-v1"),
+    ("checkout-service",     "cv-auth-v1"),
+    ("audit-service",        "cv-auth-v1"),
+    ("notification-service", "cv-auth-v1"),
+]
+
+
+# =============================================================================
 # Seed functions
 # =============================================================================
 
@@ -248,6 +323,51 @@ def _seed_apis(graph) -> None:
         )
 
 
+def _seed_contracts(graph) -> None:
+    logger.info("Seeding %d ContractVersions...", len(CONTRACT_VERSIONS))
+    for cv in CONTRACT_VERSIONS:
+        graph.query(
+            """
+            MERGE (c:ContractVersion {id: $id})
+            SET c.name            = $name,
+                c.version         = $version,
+                c.status          = $status,
+                c.api_id          = $api_id,
+                c.breaking_change = $breaking_change,
+                c.description     = $description,
+                c.claims          = $claims,
+                c.claims_json     = $claims
+            """,
+            {
+                "id": cv["id"],
+                "name": cv["name"],
+                "version": cv["version"],
+                "status": cv["status"],
+                "api_id": cv["api_id"],
+                "breaking_change": cv["breaking_change"],
+                "description": cv["description"],
+                "claims": cv["claims"],
+            },
+        )
+        graph.query(
+            """
+            MATCH (a:API {id: $api_id}), (c:ContractVersion {id: $cv_id})
+            MERGE (a)-[:HAS_CONTRACT]->(c)
+            """,
+            {"api_id": cv["api_id"], "cv_id": cv["id"]},
+        )
+
+    logger.info("Seeding %d ACCEPTS_CONTRACT edges...", len(ACCEPTS_CONTRACT_EDGES))
+    for svc_id, cv_id in ACCEPTS_CONTRACT_EDGES:
+        graph.query(
+            """
+            MATCH (s:Service {id: $svc_id}), (c:ContractVersion {id: $cv_id})
+            MERGE (s)-[:ACCEPTS_CONTRACT]->(c)
+            """,
+            {"svc_id": svc_id, "cv_id": cv_id},
+        )
+
+
 def seed(skip_verification: bool = False) -> None:
     """Run the complete seed sequence and optional verification."""
     logger.info("Resetting graph...")
@@ -257,8 +377,9 @@ def seed(skip_verification: bool = False) -> None:
 
     _seed_services(graph)
     _seed_apis(graph)
+    _seed_contracts(graph)
 
-    logger.info("Seed complete (services + APIs).")
+    logger.info("Seed complete (services + APIs + contracts).")
 
     if not skip_verification:
         verify(graph)
