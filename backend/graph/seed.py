@@ -272,6 +272,81 @@ ACCEPTS_CONTRACT_EDGES = [
 
 
 # =============================================================================
+# Historical Incidents
+# =============================================================================
+
+# INC-105 is a deliberate red herring: same domain keyword ('token'), but caused by
+# an unhandled payload parse error and retry storm rather than a breaking claim rename.
+# The Stage 3 Reviewer must deterministically reject INC-105 during token migrations.
+
+INCIDENTS = [
+    {
+        "id": "INC-101",
+        "title": "Payment Token Rejection",
+        "description": "Payment Service rejected all authentication tokens during a prior migration because the token format was unsupported. Downstream services experienced cascading failures.",
+        "severity": "critical",
+        "root_cause": "Consumer contract compatibility was not validated before migration. Payment expected v1 claims (sub, exp, roles) but received tokens in an updated format.",
+        "occurred_at": "2026-03-15",
+        "claim_types": "token_format,field_rename,sub,roles",
+        "affected_svc": "payment-service",
+    },
+    {
+        "id": "INC-102",
+        "title": "Checkout Authorization Cascade Failure",
+        "description": "Checkout requests experienced widespread authorization failures because Payment Service could not validate supplied tokens during a prior migration.",
+        "severity": "critical",
+        "root_cause": "End-to-end authorization path across Checkout and Payment was not tested before rollout. Checkout inherited Payment's incompatibility.",
+        "occurred_at": "2026-03-15",
+        "claim_types": "downstream_auth,token_format,field_rename",
+        "affected_svc": "checkout-service",
+    },
+    {
+        "id": "INC-103",
+        "title": "Session Refresh Failures",
+        "description": "Session Service refresh calls failed after an authentication change altered expiry-claim handling. Active user sessions were invalidated unexpectedly, causing 4,200 forced logouts.",
+        "severity": "high",
+        "root_cause": "Expiry claim field rename (exp->expires_at) and format change (unix->ISO 8601) broke the session refresh parser. Compatibility was not included in pre-migration validation.",
+        "occurred_at": "2026-05-02",
+        "claim_types": "expiry_claim,session_compat,expires_at,exp",
+        "affected_svc": "session-service",
+    },
+    {
+        "id": "INC-104",
+        "title": "Order Cascade from Payment Outage",
+        "description": "Order Service failed to process incoming checkout orders for 47 minutes after Payment and Checkout became unavailable due to token format rejection.",
+        "severity": "critical",
+        "root_cause": "Order Service has no queue or fallback when Checkout and Payment are unavailable. Token format mismatch cascaded downstream to order processing.",
+        "occurred_at": "2026-03-15",
+        "claim_types": "payment_dependency,token_format,downstream_cascade",
+        "affected_svc": "order-service",
+    },
+    {
+        # RED HERRING - same domain (token) but different claim type.
+        # The Reviewer should correctly reject this for the v1->v2 change
+        # because INC-105 is about parse error handling and payload storms, not field renaming.
+        "id": "INC-105",
+        "title": "Notification Storm on Token Parse Error",
+        "description": "Notification Service triggered a retry storm after receiving tokens it could not parse, resulting in 18,000 duplicate notifications sent to users over 12 minutes.",
+        "severity": "medium",
+        "root_cause": "Notification Service lacked graceful handling for unrecognized token claim formats. Error retry loop ran without backoff, causing message duplication.",
+        "occurred_at": "2025-11-18",
+        "claim_types": "error_handling,token_parse,retry_storm",
+        "affected_svc": "notification-service",
+    },
+    {
+        "id": "INC-106",
+        "title": "Audit Trail Gap from Token Expiry Mismatch",
+        "description": "Audit Service failed to record security events for 23 minutes because token expiry validation rejected all incoming tokens after the exp claim format changed.",
+        "severity": "high",
+        "root_cause": "Audit Service strictly validates token expiry using exp as a unix timestamp integer. The rename to expires_at with ISO 8601 string format caused validations to fail silently.",
+        "occurred_at": "2026-05-02",
+        "claim_types": "expiry_claim,audit_security,field_rename,expires_at,exp",
+        "affected_svc": "audit-service",
+    },
+]
+
+
+# =============================================================================
 # Seed functions
 # =============================================================================
 
@@ -368,6 +443,38 @@ def _seed_contracts(graph) -> None:
         )
 
 
+def _seed_incidents(graph) -> None:
+    logger.info("Seeding %d Incidents...", len(INCIDENTS))
+    for inc in INCIDENTS:
+        graph.query(
+            """
+            MERGE (i:Incident {id: $id})
+            SET i.title       = $title,
+                i.description = $description,
+                i.severity    = $severity,
+                i.root_cause  = $root_cause,
+                i.occurred_at = $occurred_at,
+                i.claim_types = $claim_types
+            """,
+            {
+                "id": inc["id"],
+                "title": inc["title"],
+                "description": inc["description"],
+                "severity": inc["severity"],
+                "root_cause": inc["root_cause"],
+                "occurred_at": inc["occurred_at"],
+                "claim_types": inc["claim_types"],
+            },
+        )
+        graph.query(
+            """
+            MATCH (i:Incident {id: $inc_id}), (s:Service {id: $svc_id})
+            MERGE (i)-[:AFFECTED]->(s)
+            """,
+            {"inc_id": inc["id"], "svc_id": inc["affected_svc"]},
+        )
+
+
 def seed(skip_verification: bool = False) -> None:
     """Run the complete seed sequence and optional verification."""
     logger.info("Resetting graph...")
@@ -378,8 +485,9 @@ def seed(skip_verification: bool = False) -> None:
     _seed_services(graph)
     _seed_apis(graph)
     _seed_contracts(graph)
+    _seed_incidents(graph)
 
-    logger.info("Seed complete (services + APIs + contracts).")
+    logger.info("Seed complete (services + APIs + contracts + incidents).")
 
     if not skip_verification:
         verify(graph)
@@ -430,9 +538,8 @@ def verify(graph=None) -> bool:
     check(
         "A6 - checkout reachable from auth (direct + transitive)",
         """
-        MATCH path = (c:Service {id: $checkout})-[:DEPENDS_ON*1..2]->
-                     (a:Service {id: $auth})
-        RETURN path
+        MATCH (c:Service {id: $checkout})-[:DEPENDS_ON*1..2]->(a:Service {id: $auth})
+        RETURN c
         """,
         {"checkout": "checkout-service", "auth": "auth-service"},
         2,
