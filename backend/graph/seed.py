@@ -289,6 +289,7 @@ INCIDENTS = [
         "occurred_at": "2026-03-15",
         "claim_types": "token_format,field_rename,sub,roles",
         "affected_svc": "payment-service",
+        "mitigation_id": "MIT-101",
     },
     {
         "id": "INC-102",
@@ -299,6 +300,7 @@ INCIDENTS = [
         "occurred_at": "2026-03-15",
         "claim_types": "downstream_auth,token_format,field_rename",
         "affected_svc": "checkout-service",
+        "mitigation_id": "MIT-102",
     },
     {
         "id": "INC-103",
@@ -309,6 +311,7 @@ INCIDENTS = [
         "occurred_at": "2026-05-02",
         "claim_types": "expiry_claim,session_compat,expires_at,exp",
         "affected_svc": "session-service",
+        "mitigation_id": "MIT-103",
     },
     {
         "id": "INC-104",
@@ -319,6 +322,7 @@ INCIDENTS = [
         "occurred_at": "2026-03-15",
         "claim_types": "payment_dependency,token_format,downstream_cascade",
         "affected_svc": "order-service",
+        "mitigation_id": "MIT-104",
     },
     {
         # RED HERRING - same domain (token) but different claim type.
@@ -332,6 +336,7 @@ INCIDENTS = [
         "occurred_at": "2025-11-18",
         "claim_types": "error_handling,token_parse,retry_storm",
         "affected_svc": "notification-service",
+        "mitigation_id": "MIT-105",
     },
     {
         "id": "INC-106",
@@ -342,6 +347,51 @@ INCIDENTS = [
         "occurred_at": "2026-05-02",
         "claim_types": "expiry_claim,audit_security,field_rename,expires_at,exp",
         "affected_svc": "audit-service",
+        "mitigation_id": "MIT-106",
+    },
+]
+
+
+# =============================================================================
+# Mitigations
+# =============================================================================
+
+MITIGATIONS = [
+    {
+        "id": "MIT-101",
+        "title": "Dual Version Token Support",
+        "description": "Implement a transition period supporting both v1 and v2 token formats simultaneously. Use cv-auth-v1-extended as the migration path. Add automated contract compatibility tests to CI before any token migration proceeds.",
+        "validation_method": "Integration tests with both token formats in staging; canary rollout with 5% traffic; automated contract compatibility matrix check",
+    },
+    {
+        "id": "MIT-102",
+        "title": "End-to-End Authorization Testing",
+        "description": "Run end-to-end authorization tests covering the full Checkout -> Payment authorization path before any auth contract rollout. Validate in a staging environment that mirrors production dependencies.",
+        "validation_method": "E2E test suite: Checkout + Payment auth flow; staging environment with production-mirrored service versions",
+    },
+    {
+        "id": "MIT-103",
+        "title": "Session Expiry Compatibility Validation",
+        "description": "Test expiry claim parsing and session refresh behavior against the proposed contract before migration. Add expiry claim format (unix vs ISO 8601) to the contract compatibility validation matrix.",
+        "validation_method": "Session refresh regression tests; expiry field format validator; load test session refresh under both formats",
+    },
+    {
+        "id": "MIT-104",
+        "title": "Payment Dependency Circuit Breaker",
+        "description": "Implement a circuit breaker in Order Service for the Payment and Checkout dependencies. Add graceful degradation: queue order operations when Checkout or Payment is unavailable rather than failing immediately.",
+        "validation_method": "Chaos engineering: Payment failure -> verify Order queues and retries; circuit breaker trip threshold testing",
+    },
+    {
+        "id": "MIT-105",
+        "title": "Token Parse Error Graceful Handling",
+        "description": "Add graceful fallback in Notification Service for unrecognized token claim formats. Implement exponential backoff with jitter and a dead-letter queue for parse failures to prevent retry storms.",
+        "validation_method": "Unit tests for unrecognized token format; DLQ monitoring alert; retry storm simulation test",
+    },
+    {
+        "id": "MIT-106",
+        "title": "Audit Token Refresh and Gap Alerting",
+        "description": "Implement a token refresh mechanism in Audit Service with support for both unix timestamp and ISO 8601 expiry formats. Add real-time alerting for audit trail gaps exceeding 60 seconds.",
+        "validation_method": "Dual expiry format support unit tests; audit gap alert fire test; 30-day audit trail integrity check",
     },
 ]
 
@@ -475,6 +525,36 @@ def _seed_incidents(graph) -> None:
         )
 
 
+def _seed_mitigations(graph) -> None:
+    logger.info("Seeding %d Mitigations...", len(MITIGATIONS))
+    for m in MITIGATIONS:
+        graph.query(
+            """
+            MERGE (mit:Mitigation {id: $id})
+            SET mit.title             = $title,
+                mit.description       = $description,
+                mit.validation_method = $validation_method
+            """,
+            {
+                "id": m["id"],
+                "title": m["title"],
+                "description": m["description"],
+                "validation_method": m["validation_method"],
+            },
+        )
+
+    logger.info("Linking Incidents to Mitigations (MITIGATED_BY)...")
+    for inc in INCIDENTS:
+        if inc.get("mitigation_id"):
+            graph.query(
+                """
+                MATCH (i:Incident {id: $inc_id}), (m:Mitigation {id: $mit_id})
+                MERGE (i)-[:MITIGATED_BY]->(m)
+                """,
+                {"inc_id": inc["id"], "mit_id": inc["mitigation_id"]},
+            )
+
+
 def seed(skip_verification: bool = False) -> None:
     """Run the complete seed sequence and optional verification."""
     logger.info("Resetting graph...")
@@ -486,8 +566,9 @@ def seed(skip_verification: bool = False) -> None:
     _seed_apis(graph)
     _seed_contracts(graph)
     _seed_incidents(graph)
+    _seed_mitigations(graph)
 
-    logger.info("Seed complete (services + APIs + contracts + incidents).")
+    logger.info("Seed complete (services + APIs + contracts + incidents + mitigations).")
 
     if not skip_verification:
         verify(graph)
@@ -495,7 +576,7 @@ def seed(skip_verification: bool = False) -> None:
 
 def verify(graph=None) -> bool:
     """
-    Run the 8-point verification suite.
+    Run the 10-point verification suite.
     Returns True if all assertions pass, raises AssertionError otherwise.
     """
     if graph is None:
@@ -551,12 +632,18 @@ def verify(graph=None) -> bool:
     # Assertion 8: 6 Incidents exist
     check("A8 - Incident count", "MATCH (i:Incident) RETURN i", {}, 6)
 
+    # Assertion 9: 6 Mitigation nodes exist
+    check("A9 - Mitigation count", "MATCH (m:Mitigation) RETURN m", {}, 6)
+
+    # Assertion 10: 6 MITIGATED_BY edges exist
+    check("A10 - MITIGATED_BY edges", "MATCH ()-[r:MITIGATED_BY]->() RETURN r", {}, 6)
+
     if errors:
         for e in errors:
             logger.error("ASSERTION FAILED: %s", e)
         raise AssertionError(f"{len(errors)} verification assertion(s) failed.")
 
-    logger.info("All 8 verification assertions passed.")
+    logger.info("All 10 verification assertions passed.")
     return True
 
 
