@@ -17,6 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from graph.client import health_check
+from api.topology import router as topology_router
 
 logging.basicConfig(
     level=settings.log_level.upper(),
@@ -53,6 +54,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register API Routers
+app.include_router(topology_router)
 
 
 @app.get("/", tags=["General"])
