@@ -20,6 +20,10 @@ from graph.client import get_graph
 from orchestrator.investigator import run_investigator
 from orchestrator.reviewer import run_reviewer
 from orchestrator.persist import persist_investigation
+from orchestrator.memory import (
+    get_prior_findings_with_decay,
+    apply_memory_to_findings,
+)
 
 logger = logging.getLogger("ripplegraph.pipeline")
 
@@ -104,18 +108,21 @@ def run_pipeline(
     logger.info("[Pipeline] --- Stage 1: INVESTIGATOR ---")
     investigator_output = run_investigator(change, graph=graph)
 
-    # ---- Stage 2: Memory (prior findings retrieval) ----
+    # ---- Stage 2: Memory (prior findings retrieval with temporal decay) ----
     prior_findings: List[Dict[str, Any]] = []
     if memory_enabled:
-        logger.info("[Pipeline] --- Stage 2: MEMORY (retrieving prior findings) ---")
-        prior_findings = _fetch_prior_findings(
-            investigator_output["all_affected_service_ids"],
-            investigation_id,
+        logger.info("[Pipeline] --- Stage 2: MEMORY ON (retrieving prior findings with decay) ---")
+        prior_findings = get_prior_findings_with_decay(
+            service_ids=investigator_output["all_affected_service_ids"],
+            current_investigation_id=investigation_id,
             graph=graph,
         )
-        logger.info("[Pipeline] Prior findings retrieved: %d", len(prior_findings))
+        logger.info(
+            "[Pipeline] Prior findings retrieved: %d (with temporal+hop decay applied)",
+            len(prior_findings),
+        )
     else:
-        logger.info("[Pipeline] --- Stage 2: MEMORY DISABLED (cold start) ---")
+        logger.info("[Pipeline] --- Stage 2: MEMORY OFF (cold start, no prior context) ---")
 
     # ---- Stage 3: Reviewer ----
     logger.info("[Pipeline] --- Stage 3: REVIEWER ---")
@@ -128,6 +135,11 @@ def run_pipeline(
 
     findings = reviewer_output["findings"]
     red_herrings = reviewer_output["red_herrings"]
+
+    # Apply memory-backed confidence adjustments after reviewer classification
+    if memory_enabled and prior_findings:
+        logger.info("[Pipeline] Applying memory reaffirmation boosts to %d finding(s)", len(findings))
+        findings = apply_memory_to_findings(findings, prior_findings)
 
     # ---- Stage 4: Persist ----
     logger.info("[Pipeline] --- Stage 4: PERSIST ---")
@@ -173,47 +185,3 @@ def run_pipeline(
         "execution_time_ms": round(elapsed_ms, 2),
     }
 
-
-def _fetch_prior_findings(
-    service_ids: List[str],
-    current_investigation_id: str,
-    graph: Any,
-) -> List[Dict[str, Any]]:
-    """
-    Retrieve prior Finding nodes from FalkorDB for the given service IDs,
-    excluding the current investigation run.
-
-    Returns a list of raw finding dicts with status and confidence for Stage 2 boosting.
-    """
-    if not service_ids:
-        return []
-
-    # Query all findings about the affected services from previous investigations
-    cypher = """
-    MATCH (f:Finding)-[:ABOUT_SERVICE]->(s:Service)
-    WHERE f.investigation_id <> $current_inv_id
-    RETURN f.id, f.investigation_id, f.service_id, f.status, f.confidence, f.created_at
-    ORDER BY f.created_at DESC
-    """
-    try:
-        res = graph.query(cypher, {"current_inv_id": current_investigation_id})
-    except Exception as exc:
-        logger.warning("[Stage 2] Could not fetch prior findings: %s", exc)
-        return []
-
-    target_set = set(service_ids)
-    prior: List[Dict[str, Any]] = []
-
-    for row in res.result_set:
-        fnd_id, inv_id, svc_id, status, confidence, created_at = row
-        if svc_id in target_set:
-            prior.append({
-                "id": fnd_id,
-                "investigation_id": inv_id,
-                "service_id": svc_id,
-                "status": status,
-                "confidence": float(confidence) if confidence else 0.0,
-                "created_at": created_at,
-            })
-
-    return prior
