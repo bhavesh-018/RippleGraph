@@ -10,7 +10,12 @@ import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from graph.seed import seed
-from graph.tools import check_contract_compatibility, find_direct_consumers
+from graph.tools import (
+    check_contract_compatibility,
+    find_direct_consumers,
+    traverse_downstream_dependencies,
+)
+
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -114,4 +119,49 @@ def test_check_contract_compatibility_unknown_contract():
     """Test error raised when proposed contract does not exist."""
     with pytest.raises(ValueError, match="not found in graph"):
         check_contract_compatibility("nonexistent-cv")
+
+
+def test_traverse_downstream_payment_service():
+    """
+    Test downstream discovery from payment-service:
+      - Hop 1 callers: checkout-service, audit-service
+      - Hop 2 transitive: order-service, analytics-service (via checkout-service)
+    """
+    downstream = traverse_downstream_dependencies("payment-service", max_depth=4)
+
+    assert len(downstream) == 4
+    by_id = {d["service_id"]: d for d in downstream}
+
+    # Verify Hop 1
+    assert by_id["checkout-service"]["min_hop_distance"] == 1
+    assert by_id["audit-service"]["min_hop_distance"] == 1
+
+    # Verify Hop 2
+    assert by_id["order-service"]["min_hop_distance"] == 2
+    assert by_id["analytics-service"]["min_hop_distance"] == 2
+
+    # Verify dependency chain
+    order_chains = by_id["order-service"]["dependency_chains"]
+    assert ["order-service", "checkout-service", "payment-service"] in order_chains
+
+
+def test_traverse_downstream_depth_limiting():
+    """Test restricting max_depth limits the traversal frontier."""
+    # Depth 1 only returns direct callers
+    direct_only = traverse_downstream_dependencies("payment-service", max_depth=1)
+    assert len(direct_only) == 2
+    assert {d["service_id"] for d in direct_only} == {"checkout-service", "audit-service"}
+
+
+def test_traverse_downstream_leaf_service():
+    """Test a leaf service with no callers returns an empty downstream list."""
+    leaf = traverse_downstream_dependencies("analytics-service", max_depth=4)
+    assert leaf == []
+
+
+def test_traverse_downstream_unknown_service():
+    """Test querying an unknown service raises ValueError."""
+    with pytest.raises(ValueError, match="not found in graph"):
+        traverse_downstream_dependencies("unknown-service-xyz")
+
 

@@ -213,3 +213,86 @@ def check_contract_compatibility(
         "results": results,
     }
 
+
+def traverse_downstream_dependencies(
+    service_id: str,
+    max_depth: int = 4,
+    graph: Optional[Any] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Traverse multi-hop reverse DEPENDS_ON edges starting from service_id to discover
+    all transitive downstream dependents within max_depth hops.
+
+    Traverses downstream along reverse DEPENDS_ON:
+        (downstream:Service)-[:DEPENDS_ON]->...->(origin:Service)
+
+    Returns a list of downstream service dictionaries, ordered by (min_hop_distance, service_id):
+        - service_id: downstream service identifier
+        - service_name: human-readable name of service
+        - tier: service tier (platform, core, supporting)
+        - owner_team: owning team
+        - repo: repository path
+        - min_hop_distance: shortest hop distance from target service (1 to max_depth)
+        - dependency_chains: all paths from downstream caller to origin service
+    """
+    if graph is None:
+        graph = get_graph()
+
+    # 1. Fetch metadata for all services
+    svc_res = graph.query("MATCH (s:Service) RETURN s.id, s.name, s.tier, s.owner_team, s.repo")
+    svc_meta = {
+        row[0]: {
+            "service_id": row[0],
+            "service_name": row[1],
+            "tier": row[2],
+            "owner_team": row[3],
+            "repo": row[4],
+        }
+        for row in svc_res.result_set
+    }
+
+    if service_id not in svc_meta:
+        raise ValueError(f"Service '{service_id}' not found in graph.")
+
+    # 2. Fetch all DEPENDS_ON edges (consumer calls provider)
+    edge_res = graph.query("MATCH (a:Service)-[:DEPENDS_ON]->(b:Service) RETURN a.id, b.id")
+
+    # Reverse adjacency: provider -> list of immediate callers/dependents
+    downstream_adj: Dict[str, List[str]] = {}
+    for consumer, provider in edge_res.result_set:
+        downstream_adj.setdefault(provider, []).append(consumer)
+
+    # 3. Breadth-First Search from origin service up to max_depth
+    from collections import deque
+
+    queue = deque([(service_id, 0, [service_id])])
+    visited: Dict[str, Dict[str, Any]] = {}
+
+    while queue:
+        curr, depth, path = queue.popleft()
+
+        if depth > 0:
+            if curr not in visited:
+                visited[curr] = {
+                    **svc_meta[curr],
+                    "min_hop_distance": depth,
+                    "dependency_chains": [path],
+                }
+            else:
+                # Record additional alternate paths if not already seen
+                if path not in visited[curr]["dependency_chains"]:
+                    visited[curr]["dependency_chains"].append(path)
+
+        if depth < max_depth:
+            for nxt in downstream_adj.get(curr, []):
+                # Avoid cycles in path
+                if nxt not in path:
+                    queue.append((nxt, depth + 1, [nxt] + path))
+
+    # Sort deterministically by shortest hop distance, then service_id
+    return sorted(
+        visited.values(),
+        key=lambda x: (x["min_hop_distance"], x["service_id"]),
+    )
+
+
