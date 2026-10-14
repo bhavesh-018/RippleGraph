@@ -296,3 +296,113 @@ def traverse_downstream_dependencies(
     )
 
 
+def get_relevant_incidents(
+    service_ids: Optional[List[str]] = None,
+    active_claim_types: Optional[List[str]] = None,
+    graph: Optional[Any] = None,
+) -> List[Dict[str, Any]]:
+    """
+    Fetch historical incidents tied to the specified services, and evaluate
+    claim-type relevance to detect and reject red herrings (such as INC-105).
+
+    Returns a list of incident records, each containing:
+        - incident_id: unique incident ID (e.g. INC-101)
+        - title: incident title
+        - description: detailed description of failure
+        - severity: critical, high, medium, low
+        - root_cause: root cause analysis
+        - occurred_at: ISO date string
+        - claim_types: list of claim type tags
+        - affected_service_id: service node impacted
+        - affected_service_name: human-readable service name
+        - mitigation: dict with id, title, description, validation_method (or None)
+        - relevance_status: 'RELEVANT' or 'REJECTED_RED_HERRING' (or 'UNFILTERED')
+        - matching_claim_types: list of claim types that matched active change
+        - rejection_reason: explanation if flagged as red herring
+    """
+    if graph is None:
+        graph = get_graph()
+
+    cypher = """
+    MATCH (i:Incident)-[:AFFECTED]->(s:Service)
+    OPTIONAL MATCH (i)-[:MITIGATED_BY]->(m:Mitigation)
+    RETURN i.id, i.title, i.description, i.severity, i.root_cause, i.occurred_at, i.claim_types,
+           s.id, s.name,
+           m.id, m.title, m.description, m.validation_method
+    ORDER BY i.id
+    """
+
+    res = graph.query(cypher)
+    target_services = set(service_ids) if service_ids is not None else None
+    active_claims_set = set(active_claim_types) if active_claim_types is not None else None
+
+    incidents = []
+    for row in res.result_set:
+        (
+            inc_id,
+            title,
+            desc,
+            severity,
+            root_cause,
+            occurred_at,
+            raw_claim_types,
+            svc_id,
+            svc_name,
+            mit_id,
+            mit_title,
+            mit_desc,
+            mit_val,
+        ) = row
+
+        # Service filter
+        if target_services is not None and svc_id not in target_services:
+            continue
+
+        claim_types = [c.strip() for c in (raw_claim_types or "").split(",") if c.strip()]
+
+        mitigation = None
+        if mit_id:
+            mitigation = {
+                "id": mit_id,
+                "title": mit_title,
+                "description": mit_desc,
+                "validation_method": mit_val,
+            }
+
+        # Relevance and red herring evaluation
+        if active_claims_set is not None:
+            matching = [c for c in claim_types if c in active_claims_set]
+            if matching:
+                relevance_status = "RELEVANT"
+                rejection_reason = None
+            else:
+                relevance_status = "REJECTED_RED_HERRING"
+                rejection_reason = (
+                    f"Incident '{inc_id}' claim types ({claim_types}) do not match "
+                    f"active change claim types ({sorted(list(active_claims_set))})."
+                )
+        else:
+            matching = []
+            relevance_status = "UNFILTERED"
+            rejection_reason = None
+
+        incidents.append({
+            "incident_id": inc_id,
+            "title": title,
+            "description": desc,
+            "severity": severity,
+            "root_cause": root_cause,
+            "occurred_at": occurred_at,
+            "claim_types": claim_types,
+            "affected_service_id": svc_id,
+            "affected_service_name": svc_name,
+            "mitigation": mitigation,
+            "relevance_status": relevance_status,
+            "matching_claim_types": matching,
+            "rejection_reason": rejection_reason,
+        })
+
+    return incidents
+
+
+
