@@ -1,66 +1,40 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from 'react'
 import './index.css'
 
 import TopNav from './components/TopNav'
 import LeftPanel from './components/LeftPanel'
 import CenterGraph from './components/CenterGraph'
 import RightPanel from './components/RightPanel'
-import { api } from './api/client'
-import type { Finding, ChangeProposal, RedHerring, Investigation } from './types'
-import type { NodeStateMap } from './api/sse'
+import { useInvestigationStream } from './api/sse'
+import type { ChangeProposal } from './types'
 
 function App() {
   const [selectedChange, setSelectedChange] = useState<ChangeProposal | undefined>(undefined)
-  const [findings, setFindings] = useState<Finding[]>([])
-  const [redHerrings, setRedHerrings] = useState<RedHerring[]>([])
-  const [summary, setSummary] = useState<{
-    incompatible: number
-    potential_downstream: number
-    compatible: number
-    unaffected: number
-  } | undefined>(undefined)
-  const [nodeStates, setNodeStates] = useState<NodeStateMap>({})
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined)
-  const [isRunning, setIsRunning] = useState(false)
-  const [isComplete, setIsComplete] = useState(false)
-  const [stage, setStage] = useState('')
-  const [executionTimeMs, setExecutionTimeMs] = useState<number | undefined>(undefined)
   const [disconnectGraph, setDisconnectGraph] = useState(false)
 
-  const handleRunInvestigation = useCallback(async (changeId: string, memoryEnabled: boolean) => {
-    try {
-      setFindings([])
-      setRedHerrings([])
-      setSummary(undefined)
-      setNodeStates({})
-      setIsComplete(false)
-      setIsRunning(true)
-      setStage('Stage 1: Investigator')
+  const {
+    nodeStates,
+    stage,
+    isRunning,
+    isComplete,
+    streamSummary,
+    startStream,
+    stopStream,
+  } = useInvestigationStream()
 
-      // Trigger investigation on backend with disconnectGraph flag
-      const result: Investigation = await api.startInvestigation(changeId, memoryEnabled, disconnectGraph)
-      const rawFindings: Finding[] = result.findings ?? []
-      setFindings(rawFindings)
-      setRedHerrings(result.red_herrings_rejected ?? [])
-      setSummary(result.summary)
-      setExecutionTimeMs(result.execution_time_ms)
+  const handleRunInvestigation = useCallback((changeId: string, memoryEnabled: boolean) => {
+    startStream({
+      changeId,
+      memoryEnabled,
+      disconnectGraph,
+      paceDelayS: 0.35,
+    })
+  }, [startStream, disconnectGraph])
 
-      // Build node state map to drive canvas colors & edges
-      const states: NodeStateMap = {}
-      rawFindings.forEach((f) => {
-        states[f.service_id] = {
-          status: f.status.toUpperCase() as any,
-        }
-      })
-      setNodeStates(states)
-      setIsComplete(true)
-      setStage('Stage 4: Persist')
-    } catch (err) {
-      console.error('Failed to run investigation:', err)
-    } finally {
-      setIsRunning(false)
-    }
-  }, [disconnectGraph])
+  // Derive findings + summary from the COMPLETE SSE event payload
+  const summary = streamSummary?.summary
+  const executionTimeMs = streamSummary?.execution_time_ms
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
@@ -95,8 +69,8 @@ function App() {
         </main>
 
         <RightPanel
-          findings={findings}
-          redHerrings={redHerrings}
+          findings={[]}
+          redHerrings={[]}
           summary={summary}
           isRunning={isRunning}
           isComplete={isComplete}
@@ -110,3 +84,4 @@ function App() {
 }
 
 export default App
+
