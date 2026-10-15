@@ -1,172 +1,243 @@
-import type { NodeStateMap } from '../api/sse'
 import { useEffect, useState, useCallback } from 'react'
 import ReactFlow, {
   Background,
   Controls,
+  MiniMap,
   BackgroundVariant,
+  MarkerType,
   type Node,
   type Edge,
 } from 'reactflow'
 import dagre from '@dagrejs/dagre'
 import 'reactflow/dist/style.css'
 import ServiceNode from './ServiceNode'
-
 import { api } from '../api/client'
-import type { ServiceData } from '../types'
+import type { ServiceData, NodeStatus } from '../types'
+import type { NodeStateMap } from '../api/sse'
 
-// ── Dagre Layout ─────────────────────────────────────────────────
-const NODE_W = 160
-const NODE_H = 56
+const NODE_W = 240
+const NODE_H = 120
 
-function applyDagreLayout(nodes: Node[], edges: Edge[]): Node[] {
+// Layout graph from Provider (Root) -> Consumers (Downstream)
+function applyDagreLayout(nodes: Node<ServiceData>[], edges: Edge[]): Node<ServiceData>[] {
   const g = new dagre.graphlib.Graph()
   g.setDefaultEdgeLabel(() => ({}))
-  g.setGraph({ rankdir: 'TB', nodesep: 70, ranksep: 90 })
+  g.setGraph({ rankdir: 'LR', nodesep: 50, ranksep: 80 })
 
-  nodes.forEach(n => g.setNode(n.id, { width: NODE_W, height: NODE_H }))
-  edges.forEach(e => g.setEdge(e.source, e.target))
+  nodes.forEach((n) => g.setNode(n.id, { width: NODE_W, height: NODE_H }))
+
+  // DEPENDS_ON edge is (caller)->(provider).
+  // For blast radius visualization, layout flows provider -> caller:
+  edges.forEach((e) => g.setEdge(e.target, e.source))
 
   dagre.layout(g)
 
-  return nodes.map(n => {
-    const pos = g.node(n.id)
-    return { ...n, position: { x: pos.x - NODE_W / 2, y: pos.y - NODE_H / 2 } }
+  return nodes.map((n) => {
+    const nodeWithPosition = g.node(n.id)
+    return {
+      ...n,
+      position: {
+        x: nodeWithPosition ? nodeWithPosition.x - NODE_W / 2 : 0,
+        y: nodeWithPosition ? nodeWithPosition.y - NODE_H / 2 : 0,
+      },
+    }
   })
 }
 
-// ── Default node style (C30 replaces with custom ServiceNode) ─────
-const defaultNodeStyle = {
-  background: '#141414',
-  border: '1px solid #2A2A2A',
-  borderRadius: '6px',
-  color: '#EDEDED',
-  fontSize: '12px',
-  padding: '8px 12px',
-  fontFamily: "'Inter', sans-serif",
-}
-
-// ── Custom node types registry ───────────────────────────────────
 const nodeTypes = { serviceNode: ServiceNode }
 
-// ── Component ────────────────────────────────────────────────────
 interface CenterGraphProps {
   nodeStates?: NodeStateMap
+  originServiceId?: string
+  selectedServiceId?: string
+  onSelectService?: (serviceId: string) => void
 }
 
-export default function CenterGraph({ nodeStates = {} }: CenterGraphProps) {
+export default function CenterGraph({
+  nodeStates = {},
+  originServiceId = 'auth-service',
+  selectedServiceId,
+  onSelectService,
+}: CenterGraphProps) {
   const [nodes, setNodes] = useState<Node<ServiceData>[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
+  // Load topology from backend
   const loadTopology = useCallback(async () => {
     try {
       setLoading(true)
-      setError(null)
       const data = await api.getTopology()
 
-      const rfNodes: Node<ServiceData>[] = data.nodes.map(n => ({
+      const rawNodes: Node<ServiceData>[] = data.nodes.map((n) => ({
         id: n.id,
         position: n.position,
         type: 'serviceNode',
-        data: n.data,
-        style: defaultNodeStyle,
-        ...(n.data?.name ? { data: { ...n.data, label: n.data.name } } : {}),
+        data: {
+          ...n.data,
+          status: 'UNAFFECTED',
+          isOrigin: n.id === originServiceId,
+        },
       }))
 
-      const rfEdges: Edge[] = data.edges.map(e => ({
+      const rawEdges: Edge[] = data.edges.map((e) => ({
         id: e.id,
         source: e.source,
         target: e.target,
-        style: { stroke: '#2A2A2A', strokeWidth: 1 },
+        type: 'smoothstep',
         animated: false,
+        style: { stroke: '#3F3F46', strokeWidth: 1.5 },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#3F3F46',
+          width: 16,
+          height: 16,
+        },
       }))
 
-      const layoutedNodes = applyDagreLayout(rfNodes, rfEdges)
+      const layoutedNodes = applyDagreLayout(rawNodes, rawEdges)
       setNodes(layoutedNodes)
-      setEdges(rfEdges)
+      setEdges(rawEdges)
     } catch (err) {
-      setError('Could not connect to backend. Is the API server running?')
+      console.error('Failed to load graph topology:', err)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [originServiceId])
 
   useEffect(() => {
     loadTopology()
   }, [loadTopology])
 
-  // Merge SSE node states into React Flow nodes
+  // React to investigation node state updates
   useEffect(() => {
-    if (Object.keys(nodeStates).length === 0) return
-    setNodes(prev =>
-      prev.map(n => {
-        const sseState = nodeStates[n.id]
-        if (!sseState) return n
-        return { ...n, data: { ...n.data, status: sseState.status } }
+    setNodes((currentNodes) =>
+      currentNodes.map((n) => {
+        const state = nodeStates[n.id]
+        const status = state ? (state.status as NodeStatus) : (n.data.status || 'UNAFFECTED')
+        const isOrigin = n.id === originServiceId
+
+        return {
+          ...n,
+          selected: n.id === selectedServiceId,
+          data: {
+            ...n.data,
+            status,
+            isOrigin,
+          },
+        }
       })
     )
-  }, [nodeStates])
 
-  if (loading) {
-    return (
-      <div className="center-placeholder">
-        <p className="text-secondary text-sm">Loading graph topology...</p>
-      </div>
-    )
-  }
+    // Update edge animations and colors based on node statuses
+    setEdges((currentEdges) =>
+      currentEdges.map((e) => {
+        const sourceState = nodeStates[e.source]?.status
+        const targetState = nodeStates[e.target]?.status
 
-  if (error) {
-    return (
-      <div className="center-placeholder" style={{ flexDirection: 'column', gap: '8px' }}>
-        <p className="text-sm" style={{ color: 'var(--status-incompatible-text)' }}>
-          {error}
-        </p>
-        <button
-          onClick={loadTopology}
-          style={{
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-active)',
-            color: 'var(--text-secondary)',
-            borderRadius: 'var(--radius-md)',
-            padding: '4px 12px',
-            fontSize: '12px',
-            cursor: 'pointer',
-          }}
-        >
-          Retry
-        </button>
-      </div>
+        const isBreaking = sourceState === 'INCOMPATIBLE' || targetState === 'INCOMPATIBLE'
+        const isPotential =
+          sourceState === 'POTENTIAL_DOWNSTREAM' ||
+          sourceState === 'POTENTIAL' ||
+          targetState === 'POTENTIAL_DOWNSTREAM' ||
+          targetState === 'POTENTIAL'
+
+        let stroke = '#27272A'
+        let animated = false
+
+        if (isBreaking) {
+          stroke = '#EF4444'
+          animated = true
+        } else if (isPotential) {
+          stroke = '#F59E0B'
+          animated = true
+        }
+
+        return {
+          ...e,
+          animated,
+          style: { stroke, strokeWidth: isBreaking || isPotential ? 2 : 1.5 },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: stroke,
+            width: 14,
+            height: 14,
+          },
+        }
+      })
     )
-  }
+  }, [nodeStates, originServiceId, selectedServiceId])
+
+  const handleNodeClick = useCallback(
+    (_: React.MouseEvent, node: Node) => {
+      if (onSelectService) {
+        onSelectService(node.id)
+      }
+    },
+    [onSelectService]
+  )
 
   return (
-    <div style={{ width: '100%', height: '100%' }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.15 }}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        elementsSelectable={true}
-        proOptions={{ hideAttribution: true }}
-      >
-        <Background
-          variant={BackgroundVariant.Dots}
-          gap={20}
-          size={1}
-          color="#1F1F1F"
-        />
-        <Controls
+    <div style={{ width: '100%', height: '100%', position: 'relative', background: '#09090B' }}>
+      {loading ? (
+        <div
           style={{
-            background: '#111111',
-            border: '1px solid #1F1F1F',
-            borderRadius: '6px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: '100%',
+            color: '#71717A',
+            fontFamily: 'var(--font-mono)',
+            fontSize: '13px',
           }}
-        />
-      </ReactFlow>
+        >
+          Loading 10-Service Topology...
+        </div>
+      ) : (
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          onNodeClick={handleNodeClick}
+          fitView
+          fitViewOptions={{ padding: 0.15 }}
+          minZoom={0.3}
+          maxZoom={1.8}
+        >
+          <Background
+            variant={BackgroundVariant.Dots}
+            gap={20}
+            size={1.5}
+            color="rgba(255, 255, 255, 0.07)"
+          />
+          <Controls
+            style={{
+              background: '#141416',
+              border: '1px solid #27272A',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+            }}
+          />
+          <MiniMap
+            nodeColor={(n) => {
+              const status = (n.data as ServiceData)?.status
+              if ((n.data as ServiceData)?.isOrigin) return '#6366F1'
+              if (status === 'INCOMPATIBLE') return '#EF4444'
+              if (status === 'POTENTIAL' || status === 'POTENTIAL_DOWNSTREAM') return '#F59E0B'
+              if (status === 'COMPATIBLE') return '#10B981'
+              return '#27272A'
+            }}
+            style={{
+              background: '#0D0D0F',
+              border: '1px solid #27272A',
+              borderRadius: '8px',
+              width: 140,
+              height: 90,
+            }}
+          />
+        </ReactFlow>
+      )}
     </div>
   )
 }

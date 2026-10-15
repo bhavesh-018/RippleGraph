@@ -108,7 +108,7 @@ export function useInvestigationStream(): UseInvestigationStreamReturn {
             break
 
           case 'REVIEWER_DECISION':
-            addLog('REVIEW', `${data.findingId}: ${data.decision} — ${data.rationale}`)
+            addLog('REVIEW', `${data.findingId}: ${data.decision} - ${data.rationale}`)
             break
 
           case 'INVESTIGATION_COMPLETE':

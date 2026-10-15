@@ -5,7 +5,7 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
-/* ── CSS Custom Properties ─────────────────────────────────── */
+/* ── CSS Custom Properties  */
 :root {
   /* Background layers */
   --bg-root:        #0A0A0A;
@@ -72,7 +72,7 @@
   --right-panel-width: 380px;
 }
 
-/* ── Base Reset ─────────────────────────────────────────────── */
+/* Base Reset  */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -95,7 +95,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Typography Utilities ───────────────────────────────────── */
+/* ── Typography Utilitie*/
 .text-primary   { color: var(--text-primary); }
 .text-secondary { color: var(--text-secondary); }
 .text-muted     { color: var(--text-muted); }
@@ -110,7 +110,7 @@ body {
 .font-medium  { font-weight: 500; }
 .font-semibold{ font-weight: 600; }
 
-/* ── Status Badge Utilities ─────────────────────────────────── */
+/* ── Status Badge Utilities  */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -143,7 +143,7 @@ body {
   color: var(--text-secondary);
 }
 
-/* ── Scrollbar ──────────────────────────────────────────────── */
+/* ── Scrollbar */
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
@@ -152,7 +152,7 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-focus); }
 
-/* ── Divider ────────────────────────────────────────────────── */
+/* ── Divider */
 .divider {
   height: 1px;
   background: var(--border-subdued);
@@ -160,7 +160,7 @@ body {
 }
 
 
-/* ── App Shell Layout ───────────────────────────────────────── */
+/* ── App Shell Layout ──*/
 .app-layout {
   display: flex;
   height: 100vh;
@@ -169,7 +169,7 @@ body {
   background: var(--bg-root);
 }
 
-/* ── Left Panel ─────────────────────────────────────────────── */
+/* ── Left Panel */
 .left-panel {
   width: var(--left-panel-width);
   min-width: var(--left-panel-width);
@@ -181,7 +181,7 @@ body {
   overflow: hidden;
 }
 
-/* ── Center Panel ───────────────────────────────────────────── */
+/* ── Center Panel */
 .center-panel {
   flex: 1;
   height: 100%;
@@ -192,7 +192,7 @@ body {
   background: var(--bg-root);
 }
 
-/* ── Right Panel ────────────────────────────────────────────── */
+/* ── Right Panel */
 .right-panel {
   width: var(--right-panel-width);
   min-width: var(--right-panel-width);
@@ -204,7 +204,7 @@ body {
   overflow: hidden;
 }
 
-/* ── Panel Header ───────────────────────────────────────────── */
+/* ── Panel Header */
 .panel-header {
   display: flex;
   align-items: center;
@@ -215,14 +215,14 @@ body {
   flex-shrink: 0;
 }
 
-/* ── Panel Body ─────────────────────────────────────────────── */
+/* ── Panel Body */
 .panel-body {
   flex: 1;
   overflow-y: auto;
   padding: var(--space-4);
 }
 
-/* ── App Logo ───────────────────────────────────────────────── */
+/* ── App Logo */
 .app-logo {
   font-size: 14px;
   font-weight: 600;
@@ -230,7 +230,7 @@ body {
   letter-spacing: -0.02em;
 }
 
-/* ── Center Placeholder ─────────────────────────────────────── */
+/* ── Center Placeholder */
 .center-placeholder {
   display: flex;
   align-items: center;

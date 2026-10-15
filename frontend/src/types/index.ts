@@ -1,22 +1,39 @@
-// ── Node Status ─────────────────────────────────────────────────
+// RippleGraph - Frontend TypeScript Types
+
 export type NodeStatus =
   | 'EVALUATING'
   | 'INCOMPATIBLE'
   | 'COMPATIBLE'
   | 'POTENTIAL'
+  | 'POTENTIAL_DOWNSTREAM'
   | 'UNAFFECTED'
 
-// ── Service Data (attached to each graph node) ───────────────────
 export interface ServiceData {
   id: string
   name: string
-  tier: number
+  label?: string
+  tier: string | number
   owner_team: string
   repo?: string
+  description?: string
+  icon?: string
+  runtime?: string
+  version?: string
+  port?: number
   status?: NodeStatus
+  isOrigin?: boolean
+  apis?: Array<{
+    id: string
+    name: string
+    protocol: string
+    path: string
+  }>
+  accepted_contracts?: Array<{
+    contract_id: string
+    version: string
+  }>
 }
 
-// ── Backend Topology Response ────────────────────────────────────
 export interface TopologyResponse {
   nodes: Array<{
     id: string
@@ -28,33 +45,72 @@ export interface TopologyResponse {
     source: string
     target: string
     label?: string
+    animated?: boolean
+    data?: Record<string, unknown>
   }>
+  total_services: number
+  total_dependencies: number
 }
 
-// ── Investigation & Findings ─────────────────────────────────────
+export interface ChangeProposal {
+  id: string
+  title: string
+  proposing_service: string
+  proposing_service_name: string
+  target_api: string
+  target_api_name: string
+  proposed_contract_id: string
+  risk_level: string
+  impact_scope: string
+  claim_types: string[]
+  description: string
+}
+
 export interface Finding {
   id: string
+  investigation_id?: string
   service_id: string
-  service_name: string
+  service_name?: string
   category: string
   status: string
   confidence: number
-  summary: string
-  created_at: string
+  reasons?: string[]
+  missing_claims?: string[]
+  dependency_chains?: string[][]
+  hop_depth?: number
+  recommended_mitigation_id?: string
+  recommended_contract_id?: string
+  relevant_incidents?: string[]
+  rejected_red_herrings?: string[]
+  created_at?: string
+}
+
+export interface RedHerring {
+  incident_id: string
+  title: string
+  affected_service_id: string
+  claim_types: string[]
+  active_claim_types: string[]
+  rationale: string
 }
 
 export interface Investigation {
-  investigation_id: string   // was: id
+  investigation_id: string
   change_id: string
-  change_title: string       // add this
-  status: string
+  change_title: string
   memory_enabled: boolean
-  created_at: string
-  findings?: Finding[]
+  summary: {
+    incompatible: number
+    potential_downstream: number
+    compatible: number
+    unaffected: number
+  }
+  recommended_migration_contract?: string
+  findings: Finding[]
+  red_herrings_rejected?: RedHerring[]
+  execution_time_ms?: number
 }
 
-
-// ── SSE Event Types ──────────────────────────────────────────────
 export type SSEEventType =
   | 'PIPELINE_STAGE'
   | 'NODE_EVALUATING'

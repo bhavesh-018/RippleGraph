@@ -1,186 +1,347 @@
-import type { LogEntry } from '../api/sse'
-import type { Finding } from '../types'
+import {
+  AlertOctagon,
+  AlertTriangle,
+  CheckCircle2,
+  ShieldAlert,
+  ShieldCheck,
+  FilterX,
+} from 'lucide-react'
+import type { Finding, RedHerring } from '../types'
 
 interface RightPanelProps {
-  logs: LogEntry[]
   findings: Finding[]
+  redHerrings?: RedHerring[]
   isRunning: boolean
   isComplete: boolean
-}
-
-function getStatusStyle(status: string) {
-  switch (status?.toUpperCase()) {
-    case 'INCOMPATIBLE':
-      return { bg: 'var(--status-incompatible-badge)', text: 'var(--status-incompatible-text)' }
-    case 'COMPATIBLE':
-      return { bg: 'var(--status-compatible-badge)', text: 'var(--status-compatible-text)' }
-    case 'POTENTIAL':
-    case 'POTENTIAL_DOWNSTREAM':
-      return { bg: 'var(--status-potential-badge)', text: 'var(--status-potential-text)' }
-    default:
-      return { bg: 'var(--border-subdued)', text: 'var(--text-secondary)' }
+  selectedServiceId?: string
+  onSelectService?: (serviceId: string) => void
+  summary?: {
+    incompatible: number
+    potential_downstream: number
+    compatible: number
+    unaffected: number
   }
 }
 
-function getLogColor(type: string) {
-  switch (type) {
-    case 'STAGE':    return 'var(--text-primary)'
-    case 'STATUS':   return 'var(--status-potential-text)'
-    case 'REVIEW':   return 'var(--status-incompatible-text)'
-    case 'MEMORY':   return 'var(--status-compatible-text)'
-    case 'COMPLETE': return 'var(--status-compatible-text)'
-    case 'ERROR':    return 'var(--status-incompatible-text)'
-    default:         return 'var(--text-muted)'
-  }
-}
-
-export default function RightPanel({ logs, findings, isRunning, isComplete }: RightPanelProps) {
-  // Summary counts
-  const incompatible = findings.filter(f => f.status?.toLowerCase() === 'incompatible').length
-  const potential = findings.filter(f => f.status?.toLowerCase().includes('potential')).length
-  const compatible = findings.filter(f => f.status?.toLowerCase() === 'compatible').length
+export default function RightPanel({
+  findings,
+  redHerrings = [],
+  isRunning,
+  isComplete,
+  selectedServiceId,
+  onSelectService,
+  summary,
+}: RightPanelProps) {
+  const incompatibleCount = summary?.incompatible ?? findings.filter(f => f.status?.toLowerCase() === 'incompatible').length
+  const potentialCount = summary?.potential_downstream ?? findings.filter(f => f.status?.toLowerCase().includes('potential')).length
+  const compatibleCount = summary?.compatible ?? findings.filter(f => f.status?.toLowerCase() === 'compatible').length
 
   return (
     <aside className="right-panel">
-      {/* ── Header ── */}
-      <div className="panel-header">
-        <span className="text-primary font-semibold text-md">Findings</span>
+      {/* Panel Header */}
+      <div className="panel-header" style={{ padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <ShieldAlert size={16} color="#A1A1AA" />
+          <span className="text-primary font-semibold text-sm">Blast Radius & Findings</span>
+        </div>
         <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
           {isRunning && (
-            <span className="badge badge-default" style={{ fontSize: '9px' }}>LIVE</span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '9px',
+                fontWeight: 700,
+                background: 'rgba(6, 182, 212, 0.2)',
+                color: '#67E8F9',
+                padding: '2px 6px',
+                borderRadius: '4px',
+              }}
+            >
+              INVESTIGATING
+            </span>
           )}
           {isComplete && (
-            <span className="badge badge-compatible" style={{ fontSize: '9px' }}>DONE</span>
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '9px',
+                fontWeight: 700,
+                background: 'rgba(16, 185, 129, 0.2)',
+                color: '#6EE7B7',
+                padding: '2px 6px',
+                borderRadius: '4px',
+              }}
+            >
+              VERIFIED
+            </span>
           )}
         </div>
       </div>
 
-      {/* ── Summary Bar ── */}
+      {/* Summary Scoreboard Bar */}
       {findings.length > 0 && (
-        <div style={{
-          display: 'flex',
-          gap: '8px',
-          padding: '8px 16px',
-          borderBottom: '1px solid var(--border-subdued)',
-          flexShrink: 0,
-        }}>
-          <span style={{
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 16px',
+            background: '#0D0D0F',
+            borderBottom: '1px solid #1F1F23',
             fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            color: incompatible > 0 ? 'var(--status-incompatible-text)' : 'var(--text-muted)',
-            fontWeight: incompatible > 0 ? 600 : 400,
-          }}>
-            {incompatible} INCOMPAT
-          </span>
-          <span style={{ color: 'var(--border-active)', fontSize: '10px' }}>·</span>
-          <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            color: potential > 0 ? 'var(--status-potential-text)' : 'var(--text-muted)',
-            fontWeight: potential > 0 ? 600 : 400,
-          }}>
-            {potential} POTENTIAL
-          </span>
-          <span style={{ color: 'var(--border-active)', fontSize: '10px' }}>·</span>
-          <span style={{
-            fontFamily: 'var(--font-mono)',
-            fontSize: '10px',
-            color: compatible > 0 ? 'var(--status-compatible-text)' : 'var(--text-muted)',
-            fontWeight: compatible > 0 ? 600 : 400,
-          }}>
-            {compatible} COMPAT
-          </span>
+            fontSize: '11px',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FCA5A5' }}>
+            <AlertOctagon size={12} />
+            <span style={{ fontWeight: 700 }}>{incompatibleCount}</span>
+            <span style={{ color: '#71717A' }}>Breaking</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#FCD34D' }}>
+            <AlertTriangle size={12} />
+            <span style={{ fontWeight: 700 }}>{potentialCount}</span>
+            <span style={{ color: '#71717A' }}>Downstream</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#6EE7B7' }}>
+            <CheckCircle2 size={12} />
+            <span style={{ fontWeight: 700 }}>{compatibleCount}</span>
+            <span style={{ color: '#71717A' }}>Safe</span>
+          </div>
         </div>
       )}
 
-      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-
-        {/* ── Findings Cards ── */}
-        {findings.length > 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {findings.map(f => {
-              const statusStyle = getStatusStyle(f.status)
-              return (
-                <div
-                  key={f.id}
-                  style={{
-                    padding: '10px 12px',
-                    background: 'var(--bg-elevated)',
-                    border: '1px solid var(--border-subdued)',
-                    borderRadius: 'var(--radius-md)',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    cursor: 'pointer',
-                    transition: 'border-color var(--transition-fast)',
-                  }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border-active)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border-subdued)')}
-                >
-                  {/* Title row */}
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="text-sm font-semibold">{f.service_name}</span>
-                    <span style={{
-                      fontFamily: 'var(--font-mono)',
-                      fontSize: '9px',
-                      fontWeight: 500,
-                      background: statusStyle.bg,
-                      color: statusStyle.text,
-                      padding: '1px 5px',
-                      borderRadius: '3px',
-                      textTransform: 'uppercase',
-                      letterSpacing: '0.04em',
-                    }}>
-                      {f.status}
-                    </span>
-                  </div>
-
-                  {/* Summary */}
-                  {f.summary && (
-                    <p className="text-xs text-secondary" style={{ lineHeight: 1.4 }}>
-                      {f.summary}
-                    </p>
-                  )}
-
-                  {/* Confidence + category */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span className="text-xs text-muted" style={{ fontFamily: 'var(--font-mono)' }}>
-                      {(f.confidence * 100).toFixed(0)}% confidence
-                    </span>
-                    <span className="text-xs text-muted">·</span>
-                    <span className="text-xs text-muted" style={{ fontFamily: 'var(--font-mono)' }}>
-                      {f.category}
-                    </span>
-                  </div>
-                </div>
-              )
-            })}
+      {/* Panel Body */}
+      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+        {findings.length === 0 ? (
+          <div
+            style={{
+              padding: '40px 16px',
+              textAlign: 'center',
+              color: '#71717A',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '10px',
+            }}
+          >
+            <ShieldCheck size={32} color="#3F3F46" />
+            <div style={{ fontSize: '13px', fontWeight: 500, color: '#A1A1AA' }}>
+              No Active Investigation
+            </div>
+            <p style={{ fontSize: '11px', lineHeight: 1.4, margin: 0 }}>
+              Select a proposed change on the left and click "Run Change Rehearsal" to simulate
+              the multi-hop blast radius.
+            </p>
           </div>
-        )}
-
-        {/* ── Empty state ── */}
-        {findings.length === 0 && !isRunning && (
-          <p className="text-muted text-sm">Run an investigation to see findings</p>
-        )}
-
-        {/* ── Live Log Console ── */}
-        {logs.length > 0 && (
+        ) : (
           <>
-            <div className="divider" />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span className="text-xs text-secondary font-medium" style={{ textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>
-                Event Log
-              </span>
-              <div style={{ maxHeight: '200px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '1px' }}>
-                {logs.map(log => (
-                  <div key={log.id} style={{ display: 'flex', gap: '6px', padding: '2px 0', fontSize: '11px', fontFamily: 'var(--font-mono)', lineHeight: 1.4 }}>
-                    <span style={{ color: 'var(--text-muted)', flexShrink: 0 }}>{log.timestamp}</span>
-                    <span style={{ color: getLogColor(log.type), flexShrink: 0 }}>[{log.type}]</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>{log.message}</span>
+            {/* Findings List */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {findings.map((finding) => {
+                const isSelected = finding.service_id === selectedServiceId
+                const isBreaking = finding.status?.toLowerCase() === 'incompatible'
+                const isPotential = finding.status?.toLowerCase().includes('potential')
+                const isCompatible = finding.status?.toLowerCase() === 'compatible'
+
+                let cardBorder = '#27272A'
+                let badgeBg = '#18181B'
+                let badgeText = '#A1A1AA'
+                let badgeLabel = finding.status.toUpperCase()
+
+                if (isBreaking) {
+                  cardBorder = isSelected ? '#EF4444' : '#3F1D1D'
+                  badgeBg = 'rgba(239, 68, 68, 0.2)'
+                  badgeText = '#FCA5A5'
+                  badgeLabel = 'BREAKING'
+                } else if (isPotential) {
+                  cardBorder = isSelected ? '#F59E0B' : '#382810'
+                  badgeBg = 'rgba(245, 158, 11, 0.2)'
+                  badgeText = '#FCD34D'
+                  badgeLabel = 'POTENTIAL RISK'
+                } else if (isCompatible) {
+                  cardBorder = isSelected ? '#10B981' : '#142918'
+                  badgeBg = 'rgba(16, 185, 129, 0.2)'
+                  badgeText = '#6EE7B7'
+                  badgeLabel = 'COMPATIBLE'
+                }
+
+                const confPercent = Math.round(finding.confidence * 100)
+
+                return (
+                  <div
+                    key={finding.id}
+                    onClick={() => onSelectService && onSelectService(finding.service_id)}
+                    style={{
+                      background: '#141416',
+                      border: `1px solid ${cardBorder}`,
+                      borderRadius: '8px',
+                      padding: '12px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '8px',
+                      cursor: 'pointer',
+                      transition: 'all 200ms ease',
+                      boxShadow: isSelected ? '0 0 12px rgba(255, 255, 255, 0.1)' : 'none',
+                    }}
+                  >
+                    {/* Header: Service Name + Status Badge */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 600, color: '#F4F4F5' }}>
+                        {finding.service_name || finding.service_id}
+                      </span>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          fontFamily: 'var(--font-mono)',
+                          letterSpacing: '0.04em',
+                          background: badgeBg,
+                          color: badgeText,
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        {badgeLabel}
+                      </span>
+                    </div>
+
+                    {/* Category & Hop Depth */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '11px',
+                        color: '#71717A',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
+                      <span>{finding.category}</span>
+                      {finding.hop_depth !== undefined && (
+                        <>
+                          <span>•</span>
+                          <span>Hop {finding.hop_depth}</span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Confidence Meter */}
+                    <div>
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: '10px',
+                          fontFamily: 'var(--font-mono)',
+                          color: '#A1A1AA',
+                          marginBottom: '3px',
+                        }}
+                      >
+                        <span>Agent Confidence:</span>
+                        <span style={{ fontWeight: 600, color: '#F4F4F5' }}>{confPercent}%</span>
+                      </div>
+                      <div
+                        style={{
+                          width: '100%',
+                          height: '4px',
+                          background: '#27272A',
+                          borderRadius: '2px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div
+                          style={{
+                            width: `${confPercent}%`,
+                            height: '100%',
+                            background: isBreaking ? '#EF4444' : isPotential ? '#F59E0B' : '#10B981',
+                            borderRadius: '2px',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Missing Claims (if any) */}
+                    {finding.missing_claims && finding.missing_claims.length > 0 && (
+                      <div style={{ fontSize: '11px', color: '#FCA5A5' }}>
+                        <span style={{ color: '#71717A', fontFamily: 'var(--font-mono)' }}>Missing Claims: </span>
+                        {finding.missing_claims.map((claim) => (
+                          <span
+                            key={claim}
+                            style={{
+                              background: 'rgba(239, 68, 68, 0.15)',
+                              padding: '1px 4px',
+                              borderRadius: '3px',
+                              fontFamily: 'var(--font-mono)',
+                              fontSize: '10px',
+                              marginRight: '4px',
+                            }}
+                          >
+                            {claim}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Reasons / Audit Justification */}
+                    {finding.reasons && finding.reasons.length > 0 && (
+                      <div style={{ fontSize: '11px', color: '#A1A1AA', lineHeight: 1.35 }}>
+                        {finding.reasons[0]}
+                      </div>
+                    )}
+
+                    {/* Correlated Mitigation (if present) */}
+                    {finding.recommended_mitigation_id && (
+                      <div
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.1)',
+                          border: '1px solid rgba(99, 102, 241, 0.25)',
+                          borderRadius: '6px',
+                          padding: '6px 8px',
+                          fontSize: '11px',
+                          color: '#C7D2FE',
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>Playbook Mitigation: </span>
+                        <span>{finding.recommended_mitigation_id}</span>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Red Herrings Filtered Section (Stage 3 Adversarial Filter) */}
+            {redHerrings.length > 0 && (
+              <div
+                style={{
+                  marginTop: '8px',
+                  background: '#0D0D0F',
+                  border: '1px dashed #3F3F46',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <FilterX size={14} color="#A1A1AA" />
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: '#A1A1AA', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+                    Stage 3 Adversarial Red-Herrings Rejected
+                  </span>
+                </div>
+                {redHerrings.map((rh) => (
+                  <div key={rh.incident_id} style={{ fontSize: '11px', color: '#71717A', lineHeight: 1.35 }}>
+                    <span style={{ color: '#F87171', fontWeight: 600 }}>[{rh.incident_id}] </span>
+                    <span style={{ color: '#D4D4D8' }}>{rh.title}: </span>
+                    <span>{rh.rationale}</span>
                   </div>
                 ))}
               </div>
-            </div>
+            )}
           </>
         )}
       </div>
