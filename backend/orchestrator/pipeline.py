@@ -33,8 +33,12 @@ BUILTIN_CHANGES: Dict[str, Dict[str, Any]] = {
         "id": "CHG-001",
         "title": "Auth Token Field Rename: sub -> subject_id, roles -> scopes",
         "proposing_service": "auth-service",
+        "proposing_service_name": "Auth Service",
         "target_api": "auth-token-api",
+        "target_api_name": "Auth Token API",
         "proposed_contract_id": "cv-auth-v2",
+        "risk_level": "CRITICAL",
+        "impact_scope": "Multi-Hop Cascade (4 Hops)",
         "claim_types": ["field_rename", "sub", "roles", "exp", "token_format"],
         "description": (
             "Rename core JWT fields: 'sub' to 'subject_id' and 'roles' to 'scopes'. "
@@ -46,13 +50,81 @@ BUILTIN_CHANGES: Dict[str, Dict[str, Any]] = {
         "id": "CHG-002",
         "title": "Auth Token Migration: Deploy cv-auth-v1-extended Transitional Contract",
         "proposing_service": "auth-service",
+        "proposing_service_name": "Auth Service",
         "target_api": "auth-token-api",
+        "target_api_name": "Auth Token API",
         "proposed_contract_id": "cv-auth-v1-extended",
+        "risk_level": "SAFE",
+        "impact_scope": "Zero Incompatible (Rolling Migration)",
         "claim_types": ["field_rename", "sub", "subject_id", "roles", "scopes", "token_format"],
         "description": (
             "Deploy the transitional contract cv-auth-v1-extended that supports both "
             "old claims (sub, roles) and new claims (subject_id, scopes) simultaneously. "
             "This allows a rolling migration without a coordinated cutover."
+        ),
+    },
+    "CHG-003": {
+        "id": "CHG-003",
+        "title": "Payment Precision: amount (float) -> amount_cents (int), currency -> currency_iso",
+        "proposing_service": "payment-service",
+        "proposing_service_name": "Payment Service",
+        "target_api": "payment-charge-api",
+        "target_api_name": "Payment Charge API",
+        "proposed_contract_id": "cv-payment-v2",
+        "risk_level": "HIGH",
+        "impact_scope": "Commerce Gateway Breakage (3 Hops)",
+        "claim_types": ["currency", "amount_cents", "field_rename", "payment_format"],
+        "description": (
+            "Migrate floating-point currency representation to integer cents and enforce "
+            "ISO-4217 standard currency codes. Affects checkout-service and downstream accounting."
+        ),
+    },
+    "CHG-004": {
+        "id": "CHG-004",
+        "title": "Checkout Identity Schema: user_id -> account_uuid, shipping -> delivery_details",
+        "proposing_service": "checkout-service",
+        "proposing_service_name": "Checkout Service",
+        "target_api": "checkout-create-api",
+        "target_api_name": "Checkout Create API",
+        "proposed_contract_id": "cv-checkout-v2",
+        "risk_level": "HIGH",
+        "impact_scope": "Order Fulfillment & Analytics (2 Hops)",
+        "claim_types": ["user_id", "account_uuid", "shipping_address", "field_rename"],
+        "description": (
+            "Replaces legacy user_id strings with global account UUIDs and normalizes "
+            "shipping addresses into delivery_details objects for multi-modal fulfillment."
+        ),
+    },
+    "CHG-005": {
+        "id": "CHG-005",
+        "title": "Inventory Availability: Additive reserved_quantity Field",
+        "proposing_service": "inventory-service",
+        "proposing_service_name": "Inventory Service",
+        "target_api": "inventory-query-api",
+        "target_api_name": "Inventory Query API",
+        "proposed_contract_id": "cv-inventory-v2",
+        "risk_level": "SAFE",
+        "impact_scope": "Backward Compatible Additive Update",
+        "claim_types": ["inventory", "reserved_quantity", "additive"],
+        "description": (
+            "Adds reserved_quantity field to inventory stock responses without removing "
+            "or renaming any existing fields. Existing order-service consumers remain compatible."
+        ),
+    },
+    "CHG-006": {
+        "id": "CHG-006",
+        "title": "User Profile Schema: phone string -> contact_channels Object",
+        "proposing_service": "user-service",
+        "proposing_service_name": "User Service",
+        "target_api": "user-profile-api",
+        "target_api_name": "User Profile API",
+        "proposed_contract_id": "cv-user-v2",
+        "risk_level": "MEDIUM",
+        "impact_scope": "Notification Dispatch Pipeline",
+        "claim_types": ["phone", "contact_channels", "field_rename", "profile_format"],
+        "description": (
+            "Deprecates unstructured phone string in user profiles in favor of a structured "
+            "contact_channels object specifying SMS, voice, and WhatsApp delivery preferences."
         ),
     },
 }

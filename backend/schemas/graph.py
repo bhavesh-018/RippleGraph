@@ -38,6 +38,11 @@ class ServiceNode(BaseModel):
     tier: ServiceTier = Field(..., description="Service criticality tier")
     owner_team: str = Field(..., description="Responsible engineering team")
     repo: str = Field(..., description="Source code repository path")
+    description: Optional[str] = Field(default=None, description="Service responsibility summary")
+    icon: Optional[str] = Field(default="Server", description="Frontend icon identifier")
+    runtime: Optional[str] = Field(default=None, description="Technology runtime (e.g. Go 1.22, Python 3.12)")
+    version: Optional[str] = Field(default="v1.0.0", description="Current deployed semantic version")
+    port: Optional[int] = Field(default=8080, description="Internal service network port")
 
 
 class APINode(BaseModel):
@@ -103,6 +108,22 @@ class ChangeProposal(BaseModel):
         description="Claim types affected by this change (used for incident correlation)",
     )
     description: str = Field(..., description="Detailed explanation of the proposed change")
+
+
+class ChangeCatalogItem(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    title: str
+    proposing_service: str
+    proposing_service_name: str
+    target_api: str
+    target_api_name: str
+    proposed_contract_id: str
+    risk_level: str = Field(default="HIGH", description="CRITICAL, HIGH, MEDIUM, SAFE")
+    impact_scope: str = Field(default="Direct Blast Radius")
+    claim_types: List[str] = Field(default_factory=list)
+    description: str
 
 
 class InvestigationRequest(BaseModel):

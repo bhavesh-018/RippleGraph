@@ -40,6 +40,11 @@ SERVICES = [
         "tier": "platform",
         "owner_team": "identity",
         "repo": "platform/auth-service",
+        "description": "Central identity provider issuing JWT tokens and validating sessions.",
+        "icon": "Shield",
+        "runtime": "Go 1.22 / Gin",
+        "version": "v3.2.1",
+        "port": 8001,
     },
     {
         "id": "payment-service",
@@ -47,6 +52,11 @@ SERVICES = [
         "tier": "core",
         "owner_team": "payments",
         "repo": "commerce/payment-service",
+        "description": "Core payment processor interfacing with Stripe and handling customer charges.",
+        "icon": "CreditCard",
+        "runtime": "Java 21 / Spring",
+        "version": "v2.8.4",
+        "port": 8002,
     },
     {
         "id": "user-service",
@@ -54,6 +64,11 @@ SERVICES = [
         "tier": "core",
         "owner_team": "identity",
         "repo": "platform/user-service",
+        "description": "Manages user account profiles, identities, and address books.",
+        "icon": "Users",
+        "runtime": "Python 3.12 / FastAPI",
+        "version": "v1.9.0",
+        "port": 8003,
     },
     {
         "id": "session-service",
@@ -61,6 +76,11 @@ SERVICES = [
         "tier": "platform",
         "owner_team": "identity",
         "repo": "platform/session-service",
+        "description": "Low-latency distributed session cache and refresh token store.",
+        "icon": "KeyRound",
+        "runtime": "Rust 1.78 / Actix",
+        "version": "v4.0.2",
+        "port": 8004,
     },
     {
         "id": "checkout-service",
@@ -68,6 +88,11 @@ SERVICES = [
         "tier": "core",
         "owner_team": "commerce",
         "repo": "commerce/checkout-service",
+        "description": "Orchestrates cart validation, pricing calculations, and payment handoffs.",
+        "icon": "ShoppingBag",
+        "runtime": "Node.js 20 / Fastify",
+        "version": "v2.14.0",
+        "port": 8005,
     },
     {
         "id": "order-service",
@@ -75,6 +100,11 @@ SERVICES = [
         "tier": "core",
         "owner_team": "commerce",
         "repo": "commerce/order-service",
+        "description": "Manages order lifecycle, fulfillment state machines, and invoice generation.",
+        "icon": "Package",
+        "runtime": "Go 1.22 / gRPC",
+        "version": "v3.0.5",
+        "port": 8006,
     },
     {
         "id": "inventory-service",
@@ -82,6 +112,11 @@ SERVICES = [
         "tier": "supporting",
         "owner_team": "commerce",
         "repo": "commerce/inventory-service",
+        "description": "Real-time stock reservation and warehouse quantity queries.",
+        "icon": "Warehouse",
+        "runtime": "Python 3.12 / FastAPI",
+        "version": "v1.6.2",
+        "port": 8007,
     },
     {
         "id": "analytics-service",
@@ -89,6 +124,11 @@ SERVICES = [
         "tier": "supporting",
         "owner_team": "data",
         "repo": "data/analytics-service",
+        "description": "High-throughput telemetry ingestion, metrics aggregation, and BI streaming.",
+        "icon": "BarChart3",
+        "runtime": "Scala / Apache Kafka",
+        "version": "v2.1.0",
+        "port": 8008,
     },
     {
         "id": "audit-service",
@@ -96,6 +136,11 @@ SERVICES = [
         "tier": "supporting",
         "owner_team": "compliance",
         "repo": "platform/audit-service",
+        "description": "Tamper-evident compliance audit trail for financial events and auth logs.",
+        "icon": "FileText",
+        "runtime": "Go 1.22 / gRPC",
+        "version": "v1.4.1",
+        "port": 8009,
     },
     {
         "id": "notification-service",
@@ -103,6 +148,11 @@ SERVICES = [
         "tier": "supporting",
         "owner_team": "platform",
         "repo": "platform/notification-service",
+        "description": "Multi-channel notification dispatcher for transactional email, SMS, and push.",
+        "icon": "Bell",
+        "runtime": "Node.js 20 / TypeScript",
+        "version": "v2.5.3",
+        "port": 8010,
     },
 ]
 
@@ -251,16 +301,126 @@ CONTRACT_VERSIONS = [
             "scopes": "string[] - new v2 claim name",
         }),
     },
+    {
+        "id": "cv-payment-v1",
+        "name": "Payment Charge v1",
+        "version": "1.0",
+        "status": "active",
+        "api_id": "payment-charge-api",
+        "breaking_change": False,
+        "description": "Standard payment charge contract using float amount and raw currency code.",
+        "claims": json.dumps({
+            "amount": "float - charge amount in major currency units",
+            "currency": "string - standard 3-letter currency code",
+            "source_token": "string - customer credit card token",
+        }),
+    },
+    {
+        "id": "cv-payment-v2",
+        "name": "Payment Charge v2",
+        "version": "2.0",
+        "status": "proposed",
+        "api_id": "payment-charge-api",
+        "breaking_change": True,
+        "description": "Breaking schema update converting amount float to integer cents and enforcing ISO 4217 currency format.",
+        "claims": json.dumps({
+            "amount_cents": "integer - charge amount in lowest currency denomination",
+            "currency_iso": "string - normalized ISO 4217 currency string",
+            "payment_method_id": "string - standardized customer payment method identifier",
+        }),
+    },
+    {
+        "id": "cv-checkout-v1",
+        "name": "Checkout Create v1",
+        "version": "1.0",
+        "status": "active",
+        "api_id": "checkout-create-api",
+        "breaking_change": False,
+        "description": "Legacy checkout creation contract expecting user_id and plain shipping address.",
+        "claims": json.dumps({
+            "user_id": "string - customer account identifier",
+            "cart_id": "string - active shopping cart id",
+            "shipping_address": "object - shipping destination address",
+        }),
+    },
+    {
+        "id": "cv-checkout-v2",
+        "name": "Checkout Create v2",
+        "version": "2.0",
+        "status": "proposed",
+        "api_id": "checkout-create-api",
+        "breaking_change": True,
+        "description": "Breaking update migrating user_id to account_uuid and replacing shipping_address with delivery_details.",
+        "claims": json.dumps({
+            "account_uuid": "string - normalized global account UUID",
+            "cart_id": "string - active shopping cart id",
+            "delivery_details": "object - structured shipping and delivery configuration",
+        }),
+    },
+    {
+        "id": "cv-inventory-v1",
+        "name": "Inventory Query v1",
+        "version": "1.0",
+        "status": "active",
+        "api_id": "inventory-query-api",
+        "breaking_change": False,
+        "description": "Basic inventory query contract returning available stock count.",
+        "claims": json.dumps({
+            "sku": "string - item product SKU identifier",
+            "quantity": "integer - stock count available",
+            "warehouse_id": "string - fulfillment center identifier",
+        }),
+    },
+    {
+        "id": "cv-inventory-v2",
+        "name": "Inventory Query v2 (Additive)",
+        "version": "2.0",
+        "status": "proposed",
+        "api_id": "inventory-query-api",
+        "breaking_change": False,
+        "description": "Backward-compatible additive update introducing reserved_quantity for pending checkout holds.",
+        "claims": json.dumps({
+            "sku": "string - item product SKU identifier",
+            "quantity": "integer - stock count available",
+            "warehouse_id": "string - fulfillment center identifier",
+            "reserved_quantity": "integer - quantity held in active reservations",
+        }),
+    },
+    {
+        "id": "cv-user-v1",
+        "name": "User Profile v1",
+        "version": "1.0",
+        "status": "active",
+        "api_id": "user-profile-api",
+        "breaking_change": False,
+        "description": "User profile contract returning raw phone string.",
+        "claims": json.dumps({
+            "user_id": "string - customer user id",
+            "email": "string - primary email address",
+            "phone": "string - raw phone number string",
+            "name": "string - customer full name",
+        }),
+    },
+    {
+        "id": "cv-user-v2",
+        "name": "User Profile v2",
+        "version": "2.0",
+        "status": "proposed",
+        "api_id": "user-profile-api",
+        "breaking_change": True,
+        "description": "Breaking change replacing raw phone string with structured contact_channels preference map.",
+        "claims": json.dumps({
+            "user_id": "string - customer user id",
+            "email": "string - primary email address",
+            "contact_channels": "object - structured communication preferences and verified channels",
+            "name": "string - customer full name",
+        }),
+    },
 ]
 
-# Which ContractVersion each service currently accepts on auth-token-api
-# payment-service accepts ONLY v1 (strict - breaks on v2 immediately)
-# user-service accepts both v1 and v2 (compatible)
-# session-service accepts v1 (sensitive to expiry claim changes)
-# checkout-service accepts v1 (indirectly via payment)
-# audit-service accepts v1 (reads auth tokens from logs)
-# notification-service accepts v1 (sends auth-gated notifications)
+# Which ContractVersion each service currently accepts
 ACCEPTS_CONTRACT_EDGES = [
+    # auth-token-api contracts
     ("payment-service",      "cv-auth-v1"),
     ("user-service",         "cv-auth-v1"),
     ("user-service",         "cv-auth-v2"),
@@ -268,6 +428,20 @@ ACCEPTS_CONTRACT_EDGES = [
     ("checkout-service",     "cv-auth-v1"),
     ("audit-service",        "cv-auth-v1"),
     ("notification-service", "cv-auth-v1"),
+
+    # payment-charge-api contracts
+    ("checkout-service",     "cv-payment-v1"),
+    ("audit-service",        "cv-payment-v1"),
+
+    # checkout-create-api contracts
+    ("order-service",        "cv-checkout-v1"),
+    ("analytics-service",    "cv-checkout-v1"),
+
+    # inventory-query-api contracts
+    ("order-service",        "cv-inventory-v1"),
+
+    # user-profile-api contracts
+    ("notification-service", "cv-user-v1"),
 ]
 
 
@@ -406,13 +580,28 @@ def _seed_services(graph) -> None:
         graph.query(
             """
             MERGE (s:Service {id: $id})
-            SET s.name       = $name,
-                s.tier       = $tier,
-                s.owner_team = $owner_team,
-                s.repo       = $repo
+            SET s.name        = $name,
+                s.tier        = $tier,
+                s.owner_team  = $owner_team,
+                s.repo        = $repo,
+                s.description = $description,
+                s.icon        = $icon,
+                s.runtime     = $runtime,
+                s.version     = $version,
+                s.port        = $port
             """,
-            {"id": svc["id"], "name": svc["name"], "tier": svc["tier"],
-             "owner_team": svc["owner_team"], "repo": svc["repo"]},
+            {
+                "id": svc["id"],
+                "name": svc["name"],
+                "tier": svc["tier"],
+                "owner_team": svc["owner_team"],
+                "repo": svc["repo"],
+                "description": svc.get("description", ""),
+                "icon": svc.get("icon", "Server"),
+                "runtime": svc.get("runtime", "Python 3.12"),
+                "version": svc.get("version", "v1.0.0"),
+                "port": svc.get("port", 8080),
+            },
         )
 
     logger.info("Seeding %d DEPENDS_ON edges...", len(DEPENDS_ON_EDGES))
