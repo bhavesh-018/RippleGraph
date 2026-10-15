@@ -8,6 +8,8 @@ import ReactFlow, {
 } from 'reactflow'
 import dagre from '@dagrejs/dagre'
 import 'reactflow/dist/style.css'
+import ServiceNode from './ServiceNode'
+
 
 import { api } from '../api/client'
 import type { ServiceData } from '../types'
@@ -43,6 +45,9 @@ const defaultNodeStyle = {
   fontFamily: "'Inter', sans-serif",
 }
 
+// ── Custom node types registry ───────────────────────────────────
+const nodeTypes = { serviceNode: ServiceNode }
+
 // ── Component ────────────────────────────────────────────────────
 export default function CenterGraph() {
   const [nodes, setNodes] = useState<Node<ServiceData>[]>([])
@@ -59,6 +64,7 @@ export default function CenterGraph() {
       const rfNodes: Node<ServiceData>[] = data.nodes.map(n => ({
         id: n.id,
         position: n.position,
+        type: 'serviceNode',
         data: n.data,
         style: defaultNodeStyle,
         // label shown until C30's custom node takes over
@@ -124,6 +130,7 @@ export default function CenterGraph() {
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
         fitView
         fitViewOptions={{ padding: 0.15 }}
         nodesDraggable={false}
