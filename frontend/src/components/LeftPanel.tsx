@@ -103,7 +103,7 @@ export default function LeftPanel({
         </span>
       </div>
 
-      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '12px 14px' }}>
         {/* Proposal Dropdown Selector */}
         <div>
           <label
@@ -253,13 +253,13 @@ export default function LeftPanel({
             background: '#141416',
             border: '1px solid #27272A',
             borderRadius: '8px',
-            padding: '12px',
+            padding: '10px 12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <BrainCircuit size={15} color="#A78BFA" />
-              <span style={{ fontSize: '12px', fontWeight: 600, color: '#F4F4F5' }}>Agent Memory</span>
+              <BrainCircuit size={14} color="#A78BFA" />
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#F4F4F5' }}>Agent Memory</span>
             </div>
             <button
               type="button"
@@ -269,7 +269,7 @@ export default function LeftPanel({
                 background: memoryEnabled ? 'rgba(16, 185, 129, 0.2)' : '#27272A',
                 border: `1px solid ${memoryEnabled ? '#10B981' : '#3F3F46'}`,
                 color: memoryEnabled ? '#6EE7B7' : '#A1A1AA',
-                padding: '3px 8px',
+                padding: '2px 7px',
                 borderRadius: '12px',
                 fontSize: '10px',
                 fontFamily: 'var(--font-mono)',
@@ -281,23 +281,33 @@ export default function LeftPanel({
               {memoryEnabled ? 'ON (FalkorDB)' : 'OFF (Cold Start)'}
             </button>
           </div>
-          <p style={{ fontSize: '11px', color: '#71717A', lineHeight: 1.35, margin: 0 }}>
+          <p style={{ fontSize: '10.5px', color: '#71717A', lineHeight: 1.35, margin: 0 }}>
             {memoryEnabled
               ? 'Applies temporal decay formula e^(-0.05*dt) to prior findings in FalkorDB.'
               : 'Evaluates change in cold-start mode with zero historical context.'}
           </p>
         </div>
+      </div>
 
-        {/* Run Rehearsal Action Button */}
+      {/* Pinned Action Footer (Always visible without scrolling) */}
+      <div
+        style={{
+          padding: '12px 14px',
+          borderTop: '1px solid #1F1F1F',
+          background: '#111111',
+          flexShrink: 0,
+        }}
+      >
         <button
           type="button"
           onClick={handleRun}
           disabled={isRunning || !currentChange}
           style={{
+            width: '100%',
             background: isRunning ? '#27272A' : '#EDEDED',
             border: '1px solid #3F3F46',
             borderRadius: '6px',
-            padding: '11px 14px',
+            padding: '10px 14px',
             color: isRunning ? '#71717A' : '#09090B',
             fontWeight: 600,
             fontSize: '12px',
@@ -310,7 +320,7 @@ export default function LeftPanel({
             transition: 'all 150ms ease',
           }}
         >
-          <Play size={15} fill="currentColor" />
+          <Play size={14} fill="currentColor" />
           <span>{isRunning ? 'Simulating Rehearsal...' : 'Run Change Rehearsal'}</span>
         </button>
       </div>
