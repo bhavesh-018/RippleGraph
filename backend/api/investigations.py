@@ -43,6 +43,7 @@ async def start_investigation(request: InvestigationRequest):
             change_id=request.change_id or "CHG-001",
             change_override=change_override,
             memory_enabled=request.memory_enabled,
+            disconnect_graph=request.disconnect_graph,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

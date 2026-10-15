@@ -21,6 +21,7 @@ interface RightPanelProps {
     compatible: number
     unaffected: number
   }
+  disconnectGraph?: boolean
 }
 
 export default function RightPanel({
@@ -31,6 +32,7 @@ export default function RightPanel({
   selectedServiceId,
   onSelectService,
   summary,
+  disconnectGraph = false,
 }: RightPanelProps) {
   const incompatibleCount = summary?.incompatible ?? findings.filter(f => f.status?.toLowerCase() === 'incompatible').length
   const potentialCount = summary?.potential_downstream ?? findings.filter(f => f.status?.toLowerCase().includes('potential')).length
@@ -127,17 +129,48 @@ export default function RightPanel({
               gap: '10px',
             }}
           >
-            <ShieldCheck size={32} color="#3F3F46" />
-            <div style={{ fontSize: '13px', fontWeight: 500, color: '#A1A1AA' }}>
-              No Active Investigation
+            <ShieldCheck size={32} color={disconnectGraph ? '#EF4444' : '#3F3F46'} />
+            <div style={{ fontSize: '13px', fontWeight: 500, color: disconnectGraph ? '#FCA5A5' : '#A1A1AA' }}>
+              {disconnectGraph ? 'Proof Mode Active (FalkorDB Disconnected)' : 'No Active Investigation'}
             </div>
-            <p style={{ fontSize: '11px', lineHeight: 1.4, margin: 0 }}>
-              Select a proposed change on the left and click "Run Change Rehearsal" to simulate
-              the multi-hop blast radius.
+            <p style={{ fontSize: '11px', lineHeight: 1.4, margin: 0, color: disconnectGraph ? '#F87171' : '#71717A' }}>
+              {disconnectGraph
+                ? 'FalkorDB is offline. Click "Run Change Rehearsal" to demonstrate how non-graph systems suffer from 0-hop dependency blind spots.'
+                : 'Select a proposed change on the left and click "Run Change Rehearsal" to simulate the multi-hop blast radius.'}
             </p>
           </div>
         ) : (
           <>
+            {/* Proof Mode Audit Banner */}
+            {disconnectGraph && (
+              <div
+                style={{
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid #7F1D1D',
+                  borderRadius: '8px',
+                  padding: '10px 12px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#F87171' }}>
+                  <AlertTriangle size={14} />
+                  <span style={{ fontWeight: 700, fontSize: '11px', fontFamily: 'var(--font-mono)' }}>
+                    FALKORDB REASONING OFFLINE (PROOF MODE)
+                  </span>
+                </div>
+                <p style={{ fontSize: '11px', color: '#FCA5A5', lineHeight: 1.35, margin: 0 }}>
+                  Flat table lookups failed to discover any multi-hop consumers. Without FalkorDB index-free adjacency, recursive blast radius cannot be traversed.
+                </p>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', color: '#EF4444', lineHeight: 1.4 }}>
+                  <div>- 0 breaking consumers detected (Blind Spot)</div>
+                  <div>- 0 contract compatibility rules evaluated</div>
+                  <div>- 0 prior findings recalled from memory</div>
+                </div>
+              </div>
+            )}
+
             {/* Findings List */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {findings.map((finding) => {

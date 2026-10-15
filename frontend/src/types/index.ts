@@ -99,6 +99,8 @@ export interface Investigation {
   change_id: string
   change_title: string
   memory_enabled: boolean
+  disconnect_graph?: boolean
+  warning?: string
   summary: {
     incompatible: number
     potential_downstream: number
