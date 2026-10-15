@@ -76,11 +76,14 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
     StatusIcon = Server
   }
 
+  const isEvaluating = status === 'EVALUATING'
+
   // Tier label formatting
   const tierStr = String(data.tier || 'core').toUpperCase()
 
   return (
     <div
+      className={isEvaluating ? 'node-evaluating node-scan' : undefined}
       style={{
         background: '#111113',
         border: `1.5px solid ${borderColor}`,
@@ -88,9 +91,10 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
         padding: '12px 14px',
         width: '240px',
         boxShadow: selected ? '0 0 0 2px #FFFFFF' : '0 1px 4px rgba(0,0,0,0.4)',
-        transition: 'all 200ms ease',
+        transition: 'border-color 300ms ease, box-shadow 300ms ease',
         position: 'relative',
         cursor: 'pointer',
+        overflow: 'hidden',
       }}
     >
       {/* Handles for connections */}
@@ -151,7 +155,9 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
             borderRadius: '4px',
           }}
         >
-          <StatusIcon size={10} />
+          {isEvaluating
+            ? <span className="pulse-dot" style={{ background: '#67E8F9' }} />
+            : <StatusIcon size={10} />}
           <span>{statusLabel}</span>
         </div>
       </div>

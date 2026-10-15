@@ -113,6 +113,7 @@ export interface Investigation {
   execution_time_ms?: number
 }
 
+// ── Legacy SSE types (kept for backward compatibility) ─────────────────────
 export type SSEEventType =
   | 'PIPELINE_STAGE'
   | 'NODE_EVALUATING'
@@ -125,4 +126,73 @@ export type SSEEventType =
 export interface SSEEvent {
   type: SSEEventType
   [key: string]: unknown
+}
+
+// ── Backend-aligned SSE event payloads (Feature 1) ──────────────────────────
+export type BackendSSEEventType =
+  | 'STAGE_CHANGED'
+  | 'CONSUMERS_FOUND'
+  | 'COMPATIBILITY_CHECKED'
+  | 'DOWNSTREAM_PATH'
+  | 'MEMORY_RECALLED'
+  | 'FINDING_PRODUCED'
+  | 'COMPLETE'
+
+export interface StageChangedPayload {
+  stage_id: string
+  stage_name: string
+  description: string
+}
+
+export interface ConsumersFoundPayload {
+  api_id: string
+  consumer_service_ids: string[]
+}
+
+export interface CompatibilityCheckedPayload {
+  service_id: string
+  service_name: string
+  status: 'COMPATIBLE' | 'INCOMPATIBLE'
+  contract_id: string
+  missing_claims: string[]
+}
+
+export interface DownstreamPathPayload {
+  path: string[]
+  depth: number
+  status: string
+}
+
+export interface MemoryRecalledPayload {
+  findings_count: number
+  prior_finding_ids: string[]
+  applied_to_services: string[]
+}
+
+export interface FindingProducedPayload {
+  finding_id: string
+  service_id: string
+  service_name?: string
+  category: string
+  status: string
+  confidence: number
+  hop_depth: number
+}
+
+export interface CompletePayload {
+  investigation_id: string
+  change_id: string
+  summary: {
+    incompatible: number
+    potential_downstream: number
+    compatible: number
+    unaffected: number
+  }
+  recommended_contract?: string
+  execution_time_ms: number
+}
+
+export interface BackendSSEMessage<T = unknown> {
+  event: BackendSSEEventType
+  data: T
 }

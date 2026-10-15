@@ -223,6 +223,7 @@ export default function CenterGraph({
             nodeColor={(n) => {
               const status = (n.data as ServiceData)?.status
               if ((n.data as ServiceData)?.isOrigin) return '#6366F1'
+              if (status === 'EVALUATING') return '#06B6D4'
               if (status === 'INCOMPATIBLE') return '#EF4444'
               if (status === 'POTENTIAL' || status === 'POTENTIAL_DOWNSTREAM') return '#F59E0B'
               if (status === 'COMPATIBLE') return '#10B981'

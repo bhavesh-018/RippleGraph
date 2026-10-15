@@ -63,6 +63,8 @@ export default function LeftPanel({
     }
   }
 
+
+
   // Risk badge color helper
   const getRiskColor = (risk: string) => {
     switch (risk?.toUpperCase()) {

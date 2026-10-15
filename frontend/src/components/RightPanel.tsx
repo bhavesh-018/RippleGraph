@@ -206,6 +206,7 @@ export default function RightPanel({
                 return (
                   <div
                     key={finding.id}
+                    className="finding-card-appear"
                     onClick={() => onSelectService && onSelectService(finding.service_id)}
                     style={{
                       background: '#141416',
