@@ -120,7 +120,12 @@ export default function LeftPanel({ onRunInvestigation, isRunning, stage }: Left
             letterSpacing: '-0.01em',
           }}
         >
-          {isRunning ? `Investigating... ${stage}` : 'Run Investigation'}
+          {isRunning ? (
+            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+              <span className="pulse-dot" />
+              Investigating...
+            </span>
+          ) : 'Run Investigation'}
         </button>
 
         {/* ── Stage Indicator ── */}
