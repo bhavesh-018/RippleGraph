@@ -294,3 +294,20 @@ body {
   animation: scan-shimmer 1.8s ease-in-out infinite;
   overflow: hidden;
 }
+
+/* ── Live stream: finding card appear animation ──────────────────── */
+@keyframes card-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.finding-card-appear {
+  animation: card-appear 280ms ease-out forwards;
+}
+

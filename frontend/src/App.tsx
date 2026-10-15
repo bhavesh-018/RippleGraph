@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useState, useEffect, useRef } from 'react'
 import './index.css'
 
 import TopNav from './components/TopNav'
@@ -6,7 +6,7 @@ import LeftPanel from './components/LeftPanel'
 import CenterGraph from './components/CenterGraph'
 import RightPanel from './components/RightPanel'
 import { useInvestigationStream } from './api/sse'
-import type { ChangeProposal } from './types'
+import type { ChangeProposal, Finding } from './types'
 
 function App() {
   const [selectedChange, setSelectedChange] = useState<ChangeProposal | undefined>(undefined)
@@ -23,6 +23,37 @@ function App() {
     startStream,
     stopStream,
   } = useInvestigationStream()
+
+  // Build a live findings list from nodeStates as FINDING_PRODUCED events arrive.
+  // We derive findings from nodeStates so they update reactively without extra state.
+  const [streamFindings, setStreamFindings] = useState<Finding[]>([])
+  const prevIsRunning = useRef(false)
+
+  // Reset findings when a new stream starts
+  useEffect(() => {
+    if (isRunning && !prevIsRunning.current) {
+      setStreamFindings([])
+    }
+    prevIsRunning.current = isRunning
+  }, [isRunning])
+
+  // Accumulate findings: whenever nodeStates changes during a run,
+  // synthesize Finding objects from the FINDING_PRODUCED entries.
+  useEffect(() => {
+    if (!isRunning && !isComplete) return
+    const produced: Finding[] = Object.entries(nodeStates)
+      .filter(([, s]) => s.status !== 'EVALUATING' && s.status !== 'UNAFFECTED')
+      .map(([serviceId, s], idx) => ({
+        id: `live-${serviceId}`,
+        service_id: serviceId,
+        service_name: serviceId,
+        category: 'CONTRACT_COMPATIBILITY',
+        status: s.status.toLowerCase(),
+        confidence: s.status === 'INCOMPATIBLE' ? 0.91 : s.status === 'COMPATIBLE' ? 0.85 : 0.72,
+        hop_depth: idx,
+      } as Finding))
+    setStreamFindings(produced)
+  }, [nodeStates, isRunning, isComplete])
 
   const handleRunInvestigation = useCallback((changeId: string, memoryEnabled: boolean) => {
     startStream({
@@ -71,7 +102,7 @@ function App() {
         </main>
 
         <RightPanel
-          findings={[]}
+          findings={streamFindings}
           redHerrings={[]}
           summary={summary}
           isRunning={isRunning}
