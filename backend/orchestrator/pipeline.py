@@ -138,25 +138,24 @@ def run_pipeline(
     change_id: Optional[str] = "CHG-001",
     change_override: Optional[Dict[str, Any]] = None,
     memory_enabled: bool = True,
+    disconnect_graph: bool = False,
     graph: Optional[Any] = None,
 ) -> Dict[str, Any]:
     """
-    Execute the full 4-stage Change Rehearsal pipeline.
+    Execute the 4-stage Change Rehearsal pipeline.
 
     Args:
-        change_id:       ID of a built-in change proposal (e.g. "CHG-001").
-        change_override: Custom change proposal dict. Takes precedence over change_id.
-        memory_enabled:  If True, run Stage 2 memory retrieval with temporal decay.
-        graph:           Optional FalkorDB graph handle (injected in tests).
+        change_id:        ID of a built-in change proposal (e.g. "CHG-001").
+        change_override:  Custom change proposal dict. Takes precedence over change_id.
+        memory_enabled:   If True, run Stage 2 memory retrieval with temporal decay.
+        disconnect_graph: If True (Proof Mode), simulate running without FalkorDB.
+        graph:            Optional FalkorDB graph handle (injected in tests).
 
     Returns:
         A dict compatible with InvestigationResponse schema.
     """
     start_ms = time.monotonic()
     investigation_id = _make_investigation_id()
-
-    if graph is None:
-        graph = get_graph()
 
     # Resolve the change proposal
     if change_override is not None:
@@ -168,6 +167,62 @@ def run_pipeline(
             f"Unknown change_id '{change_id}'. "
             f"Available: {list(BUILTIN_CHANGES.keys())}"
         )
+
+    # ---- Proof Mode: Disconnect FalkorDB ----
+    if disconnect_graph:
+        logger.warning(
+            "[Pipeline] PROOF MODE ACTIVE: FalkorDB disconnected. "
+            "Simulating flat registry lookup with zero index-free adjacency traversal."
+        )
+        elapsed_ms = (time.monotonic() - start_ms) * 1000
+        warning_msg = (
+            "PROOF MODE (FalkorDB Disconnected): Recursive graph traversal, "
+            "contract compatibility checking, and temporal memory are offline. "
+            "Flat registry lookup failed to detect multi-hop blast radius."
+        )
+        blind_spot_finding = {
+            "id": f"FND-STUB-{uuid.uuid4().hex[:6].upper()}",
+            "investigation_id": investigation_id,
+            "service_id": change.get("proposing_service", "auth-service"),
+            "service_name": change.get("proposing_service_name", "Origin Service"),
+            "category": "GRAPH_REASONING_OFFLINE",
+            "status": "unaffected",
+            "confidence": 0.0,
+            "reasons": [
+                "FalkorDB disconnected: Transitive DEPENDS_ON and ACCEPTS_CONTRACT edges cannot be queried.",
+                "Multi-hop blast radius blinded: 0 downstream consumers detected.",
+                "Contract version validation skipped: No schema compatibility engine.",
+            ],
+            "missing_claims": [],
+            "dependency_chains": [],
+            "hop_depth": 0,
+            "recommended_mitigation_id": None,
+            "recommended_contract_id": None,
+            "relevant_incidents": [],
+            "rejected_red_herrings": [],
+            "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        }
+        return {
+            "investigation_id": investigation_id,
+            "change_id": change["id"],
+            "change_title": change["title"],
+            "memory_enabled": False,
+            "disconnect_graph": True,
+            "warning": warning_msg,
+            "summary": {
+                "incompatible": 0,
+                "potential_downstream": 0,
+                "compatible": 0,
+                "unaffected": 1,
+            },
+            "recommended_migration_contract": None,
+            "findings": [blind_spot_finding],
+            "red_herrings_rejected": [],
+            "execution_time_ms": round(elapsed_ms, 2),
+        }
+
+    if graph is None:
+        graph = get_graph()
 
     logger.info(
         "[Pipeline] Starting investigation %s | change=%s | memory=%s",
@@ -250,6 +305,8 @@ def run_pipeline(
         "change_id": change["id"],
         "change_title": change["title"],
         "memory_enabled": memory_enabled,
+        "disconnect_graph": False,
+        "warning": None,
         "summary": summary,
         "recommended_migration_contract": recommended_contract,
         "findings": findings,

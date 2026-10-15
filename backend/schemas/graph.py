@@ -133,6 +133,10 @@ class InvestigationRequest(BaseModel):
         default=True,
         description="Whether to recall and apply prior investigation findings with temporal decay",
     )
+    disconnect_graph: bool = Field(
+        default=False,
+        description="Proof Mode: Simulates running without FalkorDB to demonstrate failure of flat/non-graph evaluation",
+    )
 
 
 class FindingNode(BaseModel):
@@ -164,6 +168,14 @@ class InvestigationResponse(BaseModel):
     change_id: str
     change_title: str
     memory_enabled: bool
+    disconnect_graph: bool = Field(
+        default=False,
+        description="Whether this investigation was executed with FalkorDB disconnected in Proof Mode",
+    )
+    warning: Optional[str] = Field(
+        default=None,
+        description="System warnings or graph availability notes",
+    )
     summary: Dict[str, int] = Field(
         description="Counts of incompatible, potential_downstream, compatible, unaffected",
     )

@@ -22,9 +22,13 @@ export const api = {
   getInvestigations: () =>
     fetchJSON<Investigation[]>('/api/investigations'),
 
-  startInvestigation: (changeId: string, memoryEnabled: boolean) =>
+  startInvestigation: (changeId: string, memoryEnabled: boolean, disconnectGraph: boolean = false) =>
     fetchJSON<Investigation>('/api/investigations', {
       method: 'POST',
-      body: JSON.stringify({ change_id: changeId, memory_enabled: memoryEnabled }),
+      body: JSON.stringify({
+        change_id: changeId,
+        memory_enabled: memoryEnabled,
+        disconnect_graph: disconnectGraph,
+      }),
     }),
 }

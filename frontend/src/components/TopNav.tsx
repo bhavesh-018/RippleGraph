@@ -7,6 +7,8 @@ interface TopNavProps {
   isComplete: boolean
   stage: string
   executionTimeMs?: number
+  disconnectGraph?: boolean
+  onToggleDisconnectGraph?: () => void
 }
 
 export default function TopNav({
@@ -15,6 +17,8 @@ export default function TopNav({
   isComplete,
   stage,
   executionTimeMs,
+  disconnectGraph = false,
+  onToggleDisconnectGraph,
 }: TopNavProps) {
   const stages = [
     { id: 'investigator', name: 'Stage 1: Investigator' },
@@ -163,25 +167,47 @@ export default function TopNav({
         )}
       </div>
 
-      {/* System Status Metrics */}
+      {/* System Status Metrics / Proof Mode Toggle */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <div
+        <button
+          type="button"
+          onClick={onToggleDisconnectGraph}
+          title={
+            disconnectGraph
+              ? 'Click to re-connect FalkorDB graph reasoning'
+              : 'Proof Mode: Click to simulate running without FalkorDB'
+          }
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: 'rgba(16, 185, 129, 0.1)',
-            border: '1px solid rgba(16, 185, 129, 0.25)',
+            background: disconnectGraph ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.1)',
+            border: `1px solid ${disconnectGraph ? 'rgba(239, 68, 68, 0.35)' : 'rgba(16, 185, 129, 0.25)'}`,
             padding: '3px 8px',
             borderRadius: '6px',
             fontSize: '11px',
             fontFamily: 'var(--font-mono)',
-            color: '#34D399',
+            color: disconnectGraph ? '#FCA5A5' : '#34D399',
+            cursor: 'pointer',
+            transition: 'all 150ms ease',
           }}
         >
-          <Database size={12} />
-          <span>FalkorDB Connected</span>
-        </div>
+          <Database size={12} color={disconnectGraph ? '#EF4444' : '#10B981'} />
+          <span>{disconnectGraph ? 'FalkorDB: Offline' : 'FalkorDB: Connected'}</span>
+          <span
+            style={{
+              fontSize: '9px',
+              padding: '1px 5px',
+              borderRadius: '3px',
+              background: disconnectGraph ? '#7F1D1D' : '#064E3B',
+              color: '#FFFFFF',
+              fontWeight: 600,
+              letterSpacing: '0.04em',
+            }}
+          >
+            {disconnectGraph ? 'PROOF MODE' : 'ONLINE'}
+          </span>
+        </button>
       </div>
     </header>
   )

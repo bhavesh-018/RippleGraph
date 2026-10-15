@@ -25,6 +25,7 @@ function App() {
   const [isComplete, setIsComplete] = useState(false)
   const [stage, setStage] = useState('')
   const [executionTimeMs, setExecutionTimeMs] = useState<number | undefined>(undefined)
+  const [disconnectGraph, setDisconnectGraph] = useState(false)
 
   const handleRunInvestigation = useCallback(async (changeId: string, memoryEnabled: boolean) => {
     try {
@@ -36,8 +37,8 @@ function App() {
       setIsRunning(true)
       setStage('Stage 1: Investigator')
 
-      // Trigger investigation on backend
-      const result: Investigation = await api.startInvestigation(changeId, memoryEnabled)
+      // Trigger investigation on backend with disconnectGraph flag
+      const result: Investigation = await api.startInvestigation(changeId, memoryEnabled, disconnectGraph)
       const rawFindings: Finding[] = result.findings ?? []
       setFindings(rawFindings)
       setRedHerrings(result.red_herrings_rejected ?? [])
@@ -59,7 +60,7 @@ function App() {
     } finally {
       setIsRunning(false)
     }
-  }, [])
+  }, [disconnectGraph])
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
@@ -70,10 +71,12 @@ function App() {
         isComplete={isComplete}
         stage={stage}
         executionTimeMs={executionTimeMs}
+        disconnectGraph={disconnectGraph}
+        onToggleDisconnectGraph={() => setDisconnectGraph((prev) => !prev)}
       />
 
       {/* 3-Panel Main Shell */}
-      <div className="app-layout" style={{ flex: 1, height: 'calc(100vh - 52px)' }}>
+      <div className="app-layout" style={{ flex: 1, height: 'calc(100vh - 48px)' }}>
         <LeftPanel
           onRunInvestigation={handleRunInvestigation}
           isRunning={isRunning}
@@ -99,6 +102,7 @@ function App() {
           isComplete={isComplete}
           selectedServiceId={selectedServiceId}
           onSelectService={setSelectedServiceId}
+          disconnectGraph={disconnectGraph}
         />
       </div>
     </div>
