@@ -6,9 +6,11 @@ import CenterGraph from './components/CenterGraph'
 import RightPanel from './components/RightPanel'
 import { api } from './api/client'
 import type { Finding } from './types'
+import type { NodeStateMap } from './api/sse'
 
 function App() {
   const [findings, setFindings] = useState<Finding[]>([])
+  const [nodeStates, setNodeStates] = useState<NodeStateMap>({})
   const [isRunning, setIsRunning] = useState(false)
   const [isComplete, setIsComplete] = useState(false)
   const [stage] = useState('')
@@ -16,12 +18,22 @@ function App() {
   const handleRunInvestigation = useCallback(async (changeId: string, memoryEnabled: boolean) => {
     try {
       setFindings([])
+      setNodeStates({})
       setIsComplete(false)
       setIsRunning(true)
-      // Pipeline runs synchronously — full result comes back in the POST response
+
       const result = await api.startInvestigation(changeId, memoryEnabled)
-      const rawFindings = (result as any).findings ?? []
+      const rawFindings: Finding[] = (result as any).findings ?? []
       setFindings(rawFindings)
+
+      // Build node state map from findings → drives node border colors
+      const states: NodeStateMap = {}
+      rawFindings.forEach(f => {
+        states[f.service_id] = {
+          status: f.status.toUpperCase() as any,
+        }
+      })
+      setNodeStates(states)
       setIsComplete(true)
     } catch (err) {
       console.error('Failed to start investigation:', err)
@@ -39,7 +51,7 @@ function App() {
       />
 
       <main className="center-panel">
-        <CenterGraph nodeStates={{}} />
+        <CenterGraph nodeStates={nodeStates} />
       </main>
 
       <RightPanel
