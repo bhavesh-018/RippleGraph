@@ -37,7 +37,7 @@ const STATUS_STYLES: Record<NodeStatus | 'default', { border: string; badgeBg: s
 }
 
 function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
-  const isOrigin = data.name?.toLowerCase().includes('auth')
+  const isOrigin = data.id === 'auth-service'
   const style = STATUS_STYLES[data.status as NodeStatus] || STATUS_STYLES['default']
 
 
