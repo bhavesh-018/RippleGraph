@@ -158,3 +158,83 @@ body {
   background: var(--border-subdued);
   width: 100%;
 }
+
+
+/* ── App Shell Layout ───────────────────────────────────────── */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg-root);
+}
+
+/* ── Left Panel ─────────────────────────────────────────────── */
+.left-panel {
+  width: var(--left-panel-width);
+  min-width: var(--left-panel-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-subdued);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+/* ── Center Panel ───────────────────────────────────────────── */
+.center-panel {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-root);
+}
+
+/* ── Right Panel ────────────────────────────────────────────── */
+.right-panel {
+  width: var(--right-panel-width);
+  min-width: var(--right-panel-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subdued);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+/* ── Panel Header ───────────────────────────────────────────── */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-4);
+  border-bottom: 1px solid var(--border-subdued);
+  min-height: 48px;
+  flex-shrink: 0;
+}
+
+/* ── Panel Body ─────────────────────────────────────────────── */
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+/* ── App Logo ───────────────────────────────────────────────── */
+.app-logo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* ── Center Placeholder ─────────────────────────────────────── */
+.center-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
