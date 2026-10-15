@@ -44,13 +44,15 @@ export interface Finding {
 }
 
 export interface Investigation {
-  id: string
+  investigation_id: string   // was: id
   change_id: string
+  change_title: string       // add this
   status: string
   memory_enabled: boolean
   created_at: string
   findings?: Finding[]
 }
+
 
 // ── SSE Event Types ──────────────────────────────────────────────
 export type SSEEventType =

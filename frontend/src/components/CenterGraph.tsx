@@ -1,3 +1,4 @@
+import type { NodeStateMap } from '../api/sse'
 import { useEffect, useState, useCallback } from 'react'
 import ReactFlow, {
   Background,
@@ -9,7 +10,6 @@ import ReactFlow, {
 import dagre from '@dagrejs/dagre'
 import 'reactflow/dist/style.css'
 import ServiceNode from './ServiceNode'
-
 
 import { api } from '../api/client'
 import type { ServiceData } from '../types'
@@ -49,7 +49,11 @@ const defaultNodeStyle = {
 const nodeTypes = { serviceNode: ServiceNode }
 
 // ── Component ────────────────────────────────────────────────────
-export default function CenterGraph() {
+interface CenterGraphProps {
+  nodeStates?: NodeStateMap
+}
+
+export default function CenterGraph({ nodeStates = {} }: CenterGraphProps) {
   const [nodes, setNodes] = useState<Node<ServiceData>[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,7 +71,6 @@ export default function CenterGraph() {
         type: 'serviceNode',
         data: n.data,
         style: defaultNodeStyle,
-        // label shown until C30's custom node takes over
         ...(n.data?.name ? { data: { ...n.data, label: n.data.name } } : {}),
       }))
 
@@ -92,6 +95,18 @@ export default function CenterGraph() {
   useEffect(() => {
     loadTopology()
   }, [loadTopology])
+
+  // Merge SSE node states into React Flow nodes
+  useEffect(() => {
+    if (Object.keys(nodeStates).length === 0) return
+    setNodes(prev =>
+      prev.map(n => {
+        const sseState = nodeStates[n.id]
+        if (!sseState) return n
+        return { ...n, data: { ...n.data, status: sseState.status } }
+      })
+    )
+  }, [nodeStates])
 
   if (loading) {
     return (
