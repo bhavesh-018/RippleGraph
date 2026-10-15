@@ -1,16 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Play,
   Layers,
   BrainCircuit,
+  Terminal,
 } from 'lucide-react'
 import type { ChangeProposal } from '../types'
+import type { LogEntry } from '../api/sse'
 import { api } from '../api/client'
 
 interface LeftPanelProps {
   onRunInvestigation: (changeId: string, memoryEnabled: boolean) => void
   isRunning: boolean
   stage: string
+  logs?: LogEntry[]
   selectedChange?: ChangeProposal
   onSelectChange?: (change: ChangeProposal) => void
 }
@@ -18,6 +21,7 @@ interface LeftPanelProps {
 export default function LeftPanel({
   onRunInvestigation,
   isRunning,
+  logs = [],
   selectedChange,
   onSelectChange,
 }: LeftPanelProps) {
@@ -25,6 +29,7 @@ export default function LeftPanel({
   const [selectedId, setSelectedId] = useState('CHG-001')
   const [memoryEnabled, setMemoryEnabled] = useState(true)
   const [loadingChanges, setLoadingChanges] = useState(true)
+  const logEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     async function loadChanges() {
@@ -60,6 +65,26 @@ export default function LeftPanel({
   const handleRun = () => {
     if (!isRunning && currentChange) {
       onRunInvestigation(currentChange.id, memoryEnabled)
+    }
+  }
+
+  // Auto-scroll log to bottom when new entries arrive
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [logs])
+
+  // Per-type color mapping for log entries
+  const logTypeColor = (type: string): string => {
+    switch (type) {
+      case 'STAGE':    return '#818CF8'
+      case 'DISCOVER': return '#06B6D4'
+      case 'COMPAT':   return '#10B981'
+      case 'PATH':     return '#F59E0B'
+      case 'MEMORY':   return '#A78BFA'
+      case 'FINDING':  return '#FB923C'
+      case 'COMPLETE': return '#34D399'
+      case 'ERROR':    return '#F87171'
+      default:         return '#71717A'
     }
   }
 
@@ -288,6 +313,87 @@ export default function LeftPanel({
           </p>
         </div>
       </div>
+
+      {/* Live Event Log — shown while stream is active or has entries */}
+      {logs.length > 0 && (
+        <div
+          style={{
+            margin: '0 14px 12px',
+            borderRadius: '8px',
+            border: '1px solid #1F1F23',
+            background: '#0A0A0C',
+            overflow: 'hidden',
+          }}
+        >
+          {/* Log header */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '7px 10px',
+              borderBottom: '1px solid #1F1F23',
+              background: '#111113',
+            }}
+          >
+            <Terminal size={12} color="#52525B" />
+            <span
+              style={{
+                fontSize: '10px',
+                fontFamily: 'var(--font-mono)',
+                color: '#52525B',
+                letterSpacing: '0.06em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Stream Log
+            </span>
+            {isRunning && (
+              <span className="pulse-dot" style={{ background: '#06B6D4', marginLeft: 'auto' }} />
+            )}
+          </div>
+
+          {/* Scrollable log entries */}
+          <div
+            style={{
+              maxHeight: '180px',
+              overflowY: 'auto',
+              padding: '6px 0',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#27272A #0A0A0C',
+            }}
+          >
+            {logs.map((entry) => (
+              <div
+                key={entry.id}
+                style={{
+                  display: 'flex',
+                  gap: '8px',
+                  padding: '3px 10px',
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '10px',
+                  lineHeight: 1.5,
+                  alignItems: 'flex-start',
+                }}
+              >
+                <span style={{ color: '#3F3F46', flexShrink: 0 }}>{entry.timestamp}</span>
+                <span
+                  style={{
+                    color: logTypeColor(entry.type),
+                    flexShrink: 0,
+                    minWidth: '52px',
+                    fontWeight: 600,
+                  }}
+                >
+                  {entry.type}
+                </span>
+                <span style={{ color: '#A1A1AA', wordBreak: 'break-word' }}>{entry.message}</span>
+              </div>
+            ))}
+            <div ref={logEndRef} />
+          </div>
+        </div>
+      )}
 
       {/* Pinned Action Footer (Always visible without scrolling) */}
       <div

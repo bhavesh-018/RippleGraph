@@ -15,6 +15,7 @@ function App() {
 
   const {
     nodeStates,
+    logs,
     stage,
     isRunning,
     isComplete,
@@ -54,6 +55,7 @@ function App() {
         <LeftPanel
           onRunInvestigation={handleRunInvestigation}
           isRunning={isRunning}
+          logs={logs}
           stage={stage}
           selectedChange={selectedChange}
           onSelectChange={setSelectedChange}
