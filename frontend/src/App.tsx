@@ -1,4 +1,5 @@
 import './index.css'
+import CenterGraph from './components/CenterGraph'
 
 function App() {
   return (
@@ -10,15 +11,13 @@ function App() {
           <span className="app-logo">RippleGraph</span>
         </div>
         <div className="panel-body">
-          <p className="text-muted text-sm">Change controls — coming in C28</p>
+          <p className="text-muted text-sm">Change controls — coming soon</p>
         </div>
       </aside>
 
       {/* ── Center: Graph Canvas ── */}
       <main className="center-panel">
-        <div className="center-placeholder">
-          <p className="text-secondary text-sm">Graph canvas — coming in C29</p>
-        </div>
+        <CenterGraph />
       </main>
 
       {/* ── Right Panel: Findings & Logs ── */}
