@@ -1,0 +1,254 @@
+/* ============================================================
+   RippleGraph — Linear Dark Design System
+   Palette: #0A0A0A base, JetBrains Mono, semantic status tokens
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ── CSS Custom Properties ─────────────────────────────────── */
+:root {
+  /* Background layers */
+  --bg-root:        #0A0A0A;
+  --bg-card:        #111111;
+  --bg-elevated:    #141414;
+  --bg-hover:       #1A1A1A;
+
+  /* Borders */
+  --border-subdued: #1F1F1F;
+  --border-active:  #2A2A2A;
+  --border-focus:   #3A3A3A;
+
+  /* Text */
+  --text-primary:   #EDEDED;
+  --text-secondary: #888888;
+  --text-muted:     #555555;
+
+  /* Semantic — Incompatible (Red) */
+  --status-incompatible-border: #8B3A3A;
+  --status-incompatible-badge:  #7A3030;
+  --status-incompatible-text:   #D97E7E;
+  --status-incompatible-bg:     #1A0D0D;
+
+  /* Semantic — Compatible (Green) */
+  --status-compatible-border: #2D4A2D;
+  --status-compatible-badge:  #2D5C2D;
+  --status-compatible-text:   #86C186;
+  --status-compatible-bg:     #0D1A0D;
+
+  /* Semantic — Potential Risk (Amber) */
+  --status-potential-border: #4A3D1A;
+  --status-potential-badge:  #5C4A1A;
+  --status-potential-text:   #D1B06A;
+  --status-potential-bg:     #1A150D;
+
+  /* Semantic — Origin node (Auth Service white) */
+  --status-origin-bg:   #EDEDED;
+  --status-origin-text: #0A0A0A;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Radii */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease;
+  --transition-base: 300ms ease;
+
+  /* Panel dimensions */
+  --left-panel-width:  260px;
+  --right-panel-width: 380px;
+}
+
+/* ── Base Reset ─────────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: var(--bg-root);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Typography Utilities ───────────────────────────────────── */
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+.text-mono      { font-family: var(--font-mono); }
+
+.text-xs  { font-size: 11px; }
+.text-sm  { font-size: 12px; }
+.text-base{ font-size: 13px; }
+.text-md  { font-size: 14px; }
+.text-lg  { font-size: 16px; }
+
+.font-medium  { font-weight: 500; }
+.font-semibold{ font-weight: 600; }
+
+/* ── Status Badge Utilities ─────────────────────────────────── */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.badge-incompatible {
+  background: var(--status-incompatible-badge);
+  color: var(--status-incompatible-text);
+}
+
+.badge-compatible {
+  background: var(--status-compatible-badge);
+  color: var(--status-compatible-text);
+}
+
+.badge-potential {
+  background: var(--status-potential-badge);
+  color: var(--status-potential-text);
+}
+
+.badge-default {
+  background: var(--border-subdued);
+  color: var(--text-secondary);
+}
+
+/* ── Scrollbar ──────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: var(--border-active);
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--border-focus); }
+
+/* ── Divider ────────────────────────────────────────────────── */
+.divider {
+  height: 1px;
+  background: var(--border-subdued);
+  width: 100%;
+}
+
+
+/* ── App Shell Layout ───────────────────────────────────────── */
+.app-layout {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: var(--bg-root);
+}
+
+/* ── Left Panel ─────────────────────────────────────────────── */
+.left-panel {
+  width: var(--left-panel-width);
+  min-width: var(--left-panel-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border-subdued);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+/* ── Center Panel ───────────────────────────────────────────── */
+.center-panel {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-root);
+}
+
+/* ── Right Panel ────────────────────────────────────────────── */
+.right-panel {
+  width: var(--right-panel-width);
+  min-width: var(--right-panel-width);
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border-subdued);
+  background: var(--bg-card);
+  overflow: hidden;
+}
+
+/* ── Panel Header ───────────────────────────────────────────── */
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-4);
+  border-bottom: 1px solid var(--border-subdued);
+  min-height: 48px;
+  flex-shrink: 0;
+}
+
+/* ── Panel Body ─────────────────────────────────────────────── */
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-4);
+}
+
+/* ── App Logo ───────────────────────────────────────────────── */
+.app-logo {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+}
+
+/* ── Center Placeholder ─────────────────────────────────────── */
+.center-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.pulse-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse-dot 1.2s ease-in-out infinite;
+}
