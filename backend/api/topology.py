@@ -40,9 +40,14 @@ async def get_graph_topology():
     """
     graph = get_graph()
 
-    # 1. Fetch services
+    # 1. Fetch services with rich metadata
     svc_res = graph.query(
-        "MATCH (s:Service) RETURN s.id, s.name, s.tier, s.owner_team, s.repo ORDER BY s.id"
+        """
+        MATCH (s:Service)
+        RETURN s.id, s.name, s.tier, s.owner_team, s.repo,
+               s.description, s.icon, s.runtime, s.version, s.port
+        ORDER BY s.id
+        """
     )
 
     # 2. Fetch APIs provided by each service
@@ -71,7 +76,14 @@ async def get_graph_topology():
 
     # 4. Construct React Flow nodes
     nodes: List[ReactFlowNode] = []
-    for svc_id, name, tier, owner_team, repo in svc_res.result_set:
+    for row in svc_res.result_set:
+        svc_id, name, tier, owner_team, repo = row[0], row[1], row[2], row[3], row[4]
+        desc = row[5] if len(row) > 5 and row[5] else ""
+        icon = row[6] if len(row) > 6 and row[6] else "Server"
+        runtime = row[7] if len(row) > 7 and row[7] else "Python 3.12"
+        version = row[8] if len(row) > 8 and row[8] else "v1.0.0"
+        port = row[9] if len(row) > 9 and row[9] else 8080
+
         pos = DEFAULT_LAYOUT.get(svc_id, {"x": 200.0, "y": 200.0})
         node_data = {
             "id": svc_id,
@@ -80,6 +92,11 @@ async def get_graph_topology():
             "tier": tier,
             "owner_team": owner_team,
             "repo": repo,
+            "description": desc,
+            "icon": icon,
+            "runtime": runtime,
+            "version": version,
+            "port": port,
             "status": "unaffected",
             "apis": apis_by_svc.get(svc_id, []),
             "accepted_contracts": contracts_by_svc.get(svc_id, []),
