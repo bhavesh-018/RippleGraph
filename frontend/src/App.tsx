@@ -1,5 +1,4 @@
 import { useState, useCallback } from 'react'
-import { AlertTriangle } from 'lucide-react'
 import './index.css'
 
 import TopNav from './components/TopNav'
@@ -55,7 +54,7 @@ function App() {
       })
       setNodeStates(states)
       setIsComplete(true)
-      setStage(disconnectGraph ? 'Proof Mode Complete' : 'Stage 4: Persist')
+      setStage('Stage 4: Persist')
     } catch (err) {
       console.error('Failed to run investigation:', err)
     } finally {
@@ -76,37 +75,8 @@ function App() {
         onToggleDisconnectGraph={() => setDisconnectGraph((prev) => !prev)}
       />
 
-      {/* Proof Mode Alert Banner */}
-      {disconnectGraph && (
-        <div
-          style={{
-            background: 'rgba(239, 68, 68, 0.12)',
-            borderBottom: '1px solid rgba(239, 68, 68, 0.3)',
-            padding: '6px 16px',
-            fontSize: '11px',
-            fontFamily: 'var(--font-mono)',
-            color: '#FCA5A5',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            flexShrink: 0,
-            zIndex: 9,
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <AlertTriangle size={14} color="#EF4444" />
-            <span>
-              <strong style={{ color: '#EF4444' }}>PROOF MODE:</strong> FalkorDB is disconnected. Graph-based dependency traversal and contract memory are offline.
-            </span>
-          </div>
-          <span style={{ fontSize: '10.5px', color: '#F87171' }}>
-            Run Change Rehearsal to demonstrate flat registry blind spot
-          </span>
-        </div>
-      )}
-
       {/* 3-Panel Main Shell */}
-      <div className="app-layout" style={{ flex: 1, height: 'calc(100vh - 52px)' }}>
+      <div className="app-layout" style={{ flex: 1, height: 'calc(100vh - 48px)' }}>
         <LeftPanel
           onRunInvestigation={handleRunInvestigation}
           isRunning={isRunning}

@@ -181,9 +181,9 @@ export default function TopNav({
             display: 'flex',
             alignItems: 'center',
             gap: '6px',
-            background: disconnectGraph ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.1)',
-            border: `1px solid ${disconnectGraph ? '#EF4444' : 'rgba(16, 185, 129, 0.3)'}`,
-            padding: '4px 10px',
+            background: disconnectGraph ? 'rgba(239, 68, 68, 0.12)' : 'rgba(16, 185, 129, 0.1)',
+            border: `1px solid ${disconnectGraph ? 'rgba(239, 68, 68, 0.35)' : 'rgba(16, 185, 129, 0.25)'}`,
+            padding: '3px 8px',
             borderRadius: '6px',
             fontSize: '11px',
             fontFamily: 'var(--font-mono)',
@@ -193,22 +193,19 @@ export default function TopNav({
           }}
         >
           <Database size={12} color={disconnectGraph ? '#EF4444' : '#10B981'} />
-          <span>
-            {disconnectGraph ? 'FalkorDB: Disconnected (Proof Mode)' : 'FalkorDB: Connected'}
-          </span>
+          <span>{disconnectGraph ? 'FalkorDB: Offline' : 'FalkorDB: Connected'}</span>
           <span
             style={{
               fontSize: '9px',
               padding: '1px 5px',
               borderRadius: '3px',
-              background: disconnectGraph ? '#991B1B' : '#064E3B',
+              background: disconnectGraph ? '#7F1D1D' : '#064E3B',
               color: '#FFFFFF',
               fontWeight: 600,
               letterSpacing: '0.04em',
-              marginLeft: '2px',
             }}
           >
-            {disconnectGraph ? 'TESTING BLIND SPOT' : 'PROOF MODE'}
+            {disconnectGraph ? 'PROOF MODE' : 'ONLINE'}
           </span>
         </button>
       </div>
