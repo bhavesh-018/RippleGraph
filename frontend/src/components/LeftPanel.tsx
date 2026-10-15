@@ -1,149 +1,318 @@
-import { useState } from 'react'
-
-// ── Available changes (matches seed data) ────────────────────────
-const CHANGES = [
-  { id: 'CHG-001', title: 'Breaking: sub → subject_id, roles → scopes' },
-  { id: 'CHG-002', title: 'Transitional: Deploy cv-auth-v1-extended contract' },
-]
+import { useState, useEffect } from 'react'
+import {
+  Play,
+  Layers,
+  BrainCircuit,
+} from 'lucide-react'
+import type { ChangeProposal } from '../types'
+import { api } from '../api/client'
 
 interface LeftPanelProps {
   onRunInvestigation: (changeId: string, memoryEnabled: boolean) => void
   isRunning: boolean
   stage: string
+  selectedChange?: ChangeProposal
+  onSelectChange?: (change: ChangeProposal) => void
 }
 
-export default function LeftPanel({ onRunInvestigation, isRunning, stage }: LeftPanelProps) {
-  const [selectedChange, setSelectedChange] = useState(CHANGES[0].id)
+export default function LeftPanel({
+  onRunInvestigation,
+  isRunning,
+  selectedChange,
+  onSelectChange,
+}: LeftPanelProps) {
+  const [changes, setChanges] = useState<ChangeProposal[]>([])
+  const [selectedId, setSelectedId] = useState('CHG-001')
   const [memoryEnabled, setMemoryEnabled] = useState(true)
+  const [loadingChanges, setLoadingChanges] = useState(true)
 
-  const handleRun = () => {
-    if (!isRunning) {
-      onRunInvestigation(selectedChange, memoryEnabled)
+  useEffect(() => {
+    async function loadChanges() {
+      try {
+        setLoadingChanges(true)
+        const data = await api.getChanges()
+        if (data && data.length > 0) {
+          setChanges(data)
+          setSelectedId(data[0].id)
+          if (onSelectChange) {
+            onSelectChange(data[0])
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load change proposals:', err)
+      } finally {
+        setLoadingChanges(false)
+      }
+    }
+    loadChanges()
+  }, [])
+
+  const currentChange = changes.find(c => c.id === selectedId) || selectedChange
+
+  const handleSelect = (id: string) => {
+    setSelectedId(id)
+    const found = changes.find(c => c.id === id)
+    if (found && onSelectChange) {
+      onSelectChange(found)
     }
   }
 
+  const handleRun = () => {
+    if (!isRunning && currentChange) {
+      onRunInvestigation(currentChange.id, memoryEnabled)
+    }
+  }
+
+  // Risk badge color helper
+  const getRiskColor = (risk: string) => {
+    switch (risk?.toUpperCase()) {
+      case 'CRITICAL':
+        return { bg: 'rgba(239, 68, 68, 0.2)', text: '#FCA5A5', border: '#EF4444' }
+      case 'HIGH':
+        return { bg: 'rgba(245, 158, 11, 0.2)', text: '#FCD34D', border: '#F59E0B' }
+      case 'MEDIUM':
+        return { bg: 'rgba(59, 130, 246, 0.2)', text: '#93C5FD', border: '#3B82F6' }
+      case 'SAFE':
+        return { bg: 'rgba(16, 185, 129, 0.2)', text: '#6EE7B7', border: '#10B981' }
+      default:
+        return { bg: '#27272A', text: '#A1A1AA', border: '#3F3F46' }
+    }
+  }
+
+  const riskStyle = getRiskColor(currentChange?.risk_level || 'HIGH')
+
   return (
     <aside className="left-panel">
-      <div className="panel-header">
-        <span className="app-logo">RippleGraph</span>
+      {/* Panel Header */}
+      <div className="panel-header" style={{ padding: '12px 16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Layers size={16} color="#A1A1AA" />
+          <span className="text-primary font-semibold text-sm">Change Proposal</span>
+        </div>
+        <span
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            color: '#71717A',
+            background: '#18181B',
+            padding: '2px 6px',
+            borderRadius: '4px',
+          }}
+        >
+          {changes.length} Proposals
+        </span>
       </div>
 
-      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-        {/* ── Change Selector ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label className="text-xs text-secondary font-medium" style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Proposed Change
+      <div className="panel-body" style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Proposal Dropdown Selector */}
+        <div>
+          <label
+            style={{
+              fontSize: '11px',
+              fontFamily: 'var(--font-mono)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.06em',
+              color: '#A1A1AA',
+              marginBottom: '6px',
+              display: 'block',
+            }}
+          >
+            Select Change Scenario
           </label>
           <select
-            value={selectedChange}
-            onChange={(e) => setSelectedChange(e.target.value)}
-            disabled={isRunning}
+            value={selectedId}
+            onChange={(e) => handleSelect(e.target.value)}
+            disabled={isRunning || loadingChanges}
             style={{
               width: '100%',
-              padding: '8px 10px',
-              background: 'var(--bg-elevated)',
-              border: '1px solid var(--border-active)',
-              borderRadius: 'var(--radius-md)',
-              color: 'var(--text-primary)',
+              padding: '9px 12px',
+              background: '#141416',
+              border: '1px solid #27272A',
+              borderRadius: '8px',
+              color: '#F4F4F5',
               fontSize: '12px',
               fontFamily: 'var(--font-sans)',
               cursor: 'pointer',
               outline: 'none',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
             }}
           >
-            {CHANGES.map(c => (
-              <option key={c.id} value={c.id} style={{ background: '#141414' }}>
-                {c.title}
+            {changes.map((c) => (
+              <option key={c.id} value={c.id} style={{ background: '#18181B', color: '#F4F4F5' }}>
+                [{c.id}] {c.title}
               </option>
             ))}
           </select>
-          <span className="text-xs text-muted" style={{ fontFamily: 'var(--font-mono)' }}>
-            {selectedChange}
-          </span>
         </div>
 
-        {/* ── Memory Toggle ── */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          <label className="text-xs text-secondary font-medium" style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-            Prior Memory
-          </label>
-          <button
-            onClick={() => setMemoryEnabled(!memoryEnabled)}
-            disabled={isRunning}
+        {/* Change Details Card */}
+        {currentChange && (
+          <div
             style={{
+              background: '#141416',
+              border: '1px solid #27272A',
+              borderRadius: '8px',
+              padding: '12px',
               display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '8px 10px',
-              background: memoryEnabled ? 'var(--status-compatible-bg)' : 'var(--bg-elevated)',
-              border: `1px solid ${memoryEnabled ? 'var(--status-compatible-border)' : 'var(--border-active)'}`,
-              borderRadius: 'var(--radius-md)',
-              color: memoryEnabled ? 'var(--status-compatible-text)' : 'var(--text-muted)',
-              fontSize: '12px',
-              fontFamily: 'var(--font-mono)',
-              cursor: isRunning ? 'not-allowed' : 'pointer',
-              transition: 'all var(--transition-base)',
-              outline: 'none',
+              flexDirection: 'column',
+              gap: '10px',
             }}
           >
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              background: memoryEnabled ? 'var(--status-compatible-text)' : 'var(--text-muted)',
-              transition: 'background var(--transition-base)',
-            }} />
-            {memoryEnabled ? 'ON' : 'OFF'}
-          </button>
-          <span className="text-xs text-muted">
-            {memoryEnabled ? 'Uses findings from prior runs' : 'Cold start — no prior context'}
-          </span>
-        </div>
+            {/* Header with Risk Pill */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: '#A1A1AA', fontWeight: 600 }}>
+                {currentChange.id}
+              </span>
+              <span
+                style={{
+                  fontSize: '9px',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                  letterSpacing: '0.04em',
+                  background: riskStyle.bg,
+                  color: riskStyle.text,
+                  border: `1px solid ${riskStyle.border}`,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                }}
+              >
+                {currentChange.risk_level}
+              </span>
+            </div>
 
-        {/* ── Run Button ── */}
-        <button
-          onClick={handleRun}
-          disabled={isRunning}
-          style={{
-            width: '100%',
-            padding: '10px',
-            background: isRunning ? 'var(--bg-elevated)' : 'var(--text-primary)',
-            color: isRunning ? 'var(--text-muted)' : 'var(--bg-root)',
-            border: `1px solid ${isRunning ? 'var(--border-active)' : 'var(--text-primary)'}`,
-            borderRadius: 'var(--radius-md)',
-            fontSize: '13px',
-            fontWeight: 600,
-            fontFamily: 'var(--font-sans)',
-            cursor: isRunning ? 'not-allowed' : 'pointer',
-            transition: 'all var(--transition-base)',
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {isRunning ? (
-            <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-              <span className="pulse-dot" />
-              Investigating...
-            </span>
-          ) : 'Run Investigation'}
-        </button>
+            {/* Title */}
+            <div style={{ fontSize: '12px', fontWeight: 600, color: '#F4F4F5', lineHeight: 1.3 }}>
+              {currentChange.title}
+            </div>
 
-        {/* ── Stage Indicator ── */}
-        {isRunning && stage && (
-          <div style={{
-            padding: '8px 10px',
-            background: 'var(--bg-elevated)',
-            border: '1px solid var(--border-subdued)',
-            borderRadius: 'var(--radius-md)',
-          }}>
-            <span className="text-xs text-secondary font-medium" style={{ textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-              Active Stage
-            </span>
-            <p className="text-sm" style={{ color: 'var(--text-primary)', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
-              {stage}
-            </p>
+            {/* Description */}
+            <div style={{ fontSize: '11px', color: '#A1A1AA', lineHeight: 1.4 }}>
+              {currentChange.description}
+            </div>
+
+            {/* Scope info */}
+            <div
+              style={{
+                background: '#0D0D0F',
+                border: '1px solid #1F1F23',
+                borderRadius: '6px',
+                padding: '8px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '5px',
+                fontSize: '11px',
+                fontFamily: 'var(--font-mono)',
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#71717A' }}>Proposing:</span>
+                <span style={{ color: '#E4E4E7' }}>{currentChange.proposing_service_name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#71717A' }}>Target API:</span>
+                <span style={{ color: '#E4E4E7' }}>{currentChange.target_api_name}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#71717A' }}>Proposed Contract:</span>
+                <span style={{ color: '#818CF8' }}>{currentChange.proposed_contract_id}</span>
+              </div>
+            </div>
+
+            {/* Claim Types Tags */}
+            {currentChange.claim_types && currentChange.claim_types.length > 0 && (
+              <div>
+                <span style={{ fontSize: '10px', color: '#71717A', fontFamily: 'var(--font-mono)', display: 'block', marginBottom: '4px' }}>
+                  Impacted Claim Keys:
+                </span>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {currentChange.claim_types.map((claim) => (
+                    <span
+                      key={claim}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        border: '1px solid #27272A',
+                        borderRadius: '3px',
+                        padding: '1px 5px',
+                        fontSize: '10px',
+                        fontFamily: 'var(--font-mono)',
+                        color: '#A1A1AA',
+                      }}
+                    >
+                      {claim}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
+
+        {/* Memory Engine Toggle (Track 2) */}
+        <div
+          style={{
+            background: '#141416',
+            border: '1px solid #27272A',
+            borderRadius: '8px',
+            padding: '12px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <BrainCircuit size={15} color="#A78BFA" />
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#F4F4F5' }}>Agent Memory</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setMemoryEnabled(!memoryEnabled)}
+              disabled={isRunning}
+              style={{
+                background: memoryEnabled ? 'rgba(16, 185, 129, 0.2)' : '#27272A',
+                border: `1px solid ${memoryEnabled ? '#10B981' : '#3F3F46'}`,
+                color: memoryEnabled ? '#6EE7B7' : '#A1A1AA',
+                padding: '3px 8px',
+                borderRadius: '12px',
+                fontSize: '10px',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+              }}
+            >
+              {memoryEnabled ? 'ON (FalkorDB)' : 'OFF (Cold Start)'}
+            </button>
+          </div>
+          <p style={{ fontSize: '11px', color: '#71717A', lineHeight: 1.35, margin: 0 }}>
+            {memoryEnabled
+              ? 'Applies temporal decay formula e^(-0.05*dt) to prior findings in FalkorDB.'
+              : 'Evaluates change in cold-start mode with zero historical context.'}
+          </p>
+        </div>
+
+        {/* Run Rehearsal Action Button */}
+        <button
+          type="button"
+          onClick={handleRun}
+          disabled={isRunning || !currentChange}
+          style={{
+            background: isRunning ? '#27272A' : '#EDEDED',
+            border: '1px solid #3F3F46',
+            borderRadius: '6px',
+            padding: '11px 14px',
+            color: isRunning ? '#71717A' : '#09090B',
+            fontWeight: 600,
+            fontSize: '12px',
+            cursor: isRunning ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            boxShadow: 'none',
+            transition: 'all 150ms ease',
+          }}
+        >
+          <Play size={15} fill="currentColor" />
+          <span>{isRunning ? 'Simulating Rehearsal...' : 'Run Change Rehearsal'}</span>
+        </button>
       </div>
     </aside>
   )

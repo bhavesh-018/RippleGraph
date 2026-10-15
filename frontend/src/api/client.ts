@@ -1,6 +1,6 @@
-import type { TopologyResponse, Investigation } from '../types'
+import type { TopologyResponse, Investigation, ChangeProposal } from '../types'
 
-// Uses Vite proxy in dev (/api → http://localhost:8000)
+// Uses Vite proxy in dev (/api -> http://localhost:8000)
 async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
     headers: { 'Content-Type': 'application/json' },
@@ -15,6 +15,9 @@ async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
 export const api = {
   getTopology: () =>
     fetchJSON<TopologyResponse>('/api/graph/topology'),
+
+  getChanges: () =>
+    fetchJSON<ChangeProposal[]>('/api/changes'),
 
   getInvestigations: () =>
     fetchJSON<Investigation[]>('/api/investigations'),
