@@ -11,14 +11,43 @@ import logging
 from typing import Any, Dict, List, Optional
 
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import StreamingResponse
 
 from graph.client import get_graph
 from orchestrator.pipeline import run_pipeline
+from orchestrator.stream import stream_investigation
 from schemas.graph import InvestigationRequest, InvestigationResponse, FindingNode
 
 router = APIRouter(prefix="/api/investigations", tags=["Investigations"])
 
 logger = logging.getLogger("ripplegraph.api.investigations")
+
+
+@router.get("/stream")
+async def stream_investigation_endpoint(
+    change_id: str = "CHG-001",
+    memory_enabled: bool = True,
+    disconnect_graph: bool = False,
+    pace_delay_s: float = 0.35,
+):
+    """
+    Stream investigation execution events in real time using Server-Sent Events (SSE).
+    Enables live React Flow graph node highlights and traversal edge animations.
+    """
+    return StreamingResponse(
+        stream_investigation(
+            change_id=change_id,
+            memory_enabled=memory_enabled,
+            disconnect_graph=disconnect_graph,
+            pace_delay_s=pace_delay_s,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("", response_model=InvestigationResponse)

@@ -114,7 +114,7 @@ async def stream_investigation(
 
     # 1. Discover direct consumers
     consumers = find_direct_consumers(target_api, graph=graph)
-    consumer_ids = [c["id"] for c in consumers]
+    consumer_ids = [c.get("service_id") or c.get("id") for c in consumers if (c.get("service_id") or c.get("id"))]
 
     yield SSEMessage(
         event=SSEEventType.CONSUMERS_FOUND,
@@ -134,10 +134,13 @@ async def stream_investigation(
     )
 
     incompatible_service_ids: List[str] = []
-    for c_res in compat_results:
+    results_list = compat_results.get("results", []) if isinstance(compat_results, dict) else compat_results
+
+    for c_res in results_list:
         svc_id = c_res["service_id"]
-        status = c_res["status"].upper()
-        if status == "INCOMPATIBLE":
+        is_compat = c_res.get("is_compatible", True)
+        status = "COMPATIBLE" if is_compat else "INCOMPATIBLE"
+        if not is_compat:
             incompatible_service_ids.append(svc_id)
 
         yield SSEMessage(
@@ -155,14 +158,15 @@ async def stream_investigation(
 
     # 3. Traverse downstream dependencies
     downstream_paths = traverse_downstream_dependencies(
-        origin_service_id=proposing_service,
+        service_id=proposing_service,
         max_depth=4,
         graph=graph,
     )
 
     for path_item in downstream_paths:
-        path_services = path_item.get("path", [])
-        depth = path_item.get("depth", len(path_services) - 1)
+        chains = path_item.get("dependency_chains", [])
+        path_services = chains[0] if chains else [path_item.get("service_id", ""), proposing_service]
+        depth = path_item.get("min_hop_distance", 1)
 
         yield SSEMessage(
             event=SSEEventType.DOWNSTREAM_PATH,
@@ -221,15 +225,19 @@ async def stream_investigation(
 
     # Synthesize investigator output structure
     incidents = get_relevant_incidents(
-        claim_types=change.get("claim_types", []),
         service_ids=all_affected_ids,
+        active_claim_types=change.get("claim_types", []),
         graph=graph,
     )
     investigator_output = {
+        "change_id": change["id"],
+        "target_api": target_api,
+        "proposed_contract_id": proposed_contract_id,
+        "claim_types": change.get("claim_types", []),
         "direct_consumers": consumers,
-        "compatibility_results": compat_results,
-        "downstream_paths": downstream_paths,
-        "incidents": incidents,
+        "compatibility_report": compat_results,
+        "downstream_services": downstream_paths,
+        "relevant_incidents": incidents,
         "all_affected_service_ids": all_affected_ids,
     }
 
