@@ -311,3 +311,16 @@ body {
   animation: card-appear 280ms ease-out forwards;
 }
 
+/* ── Stream console: pop-in animation ────────────────────────────── */
+@keyframes log-pop {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+

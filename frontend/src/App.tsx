@@ -5,6 +5,7 @@ import TopNav from './components/TopNav'
 import LeftPanel from './components/LeftPanel'
 import CenterGraph from './components/CenterGraph'
 import RightPanel from './components/RightPanel'
+import StreamLog from './components/StreamLog'
 import { useInvestigationStream } from './api/sse'
 import type { ChangeProposal, Finding } from './types'
 
@@ -86,7 +87,6 @@ function App() {
         <LeftPanel
           onRunInvestigation={handleRunInvestigation}
           isRunning={isRunning}
-          logs={logs}
           stage={stage}
           selectedChange={selectedChange}
           onSelectChange={setSelectedChange}
@@ -98,6 +98,12 @@ function App() {
             originServiceId={selectedChange?.proposing_service || 'auth-service'}
             selectedServiceId={selectedServiceId}
             onSelectService={setSelectedServiceId}
+          />
+          <StreamLog
+            logs={logs}
+            isRunning={isRunning}
+            isComplete={isComplete}
+            stage={stage}
           />
         </main>
 
