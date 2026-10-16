@@ -6,13 +6,21 @@ import LeftPanel from './components/LeftPanel'
 import CenterGraph from './components/CenterGraph'
 import RightPanel from './components/RightPanel'
 import StreamLog from './components/StreamLog'
+import EvidenceModal from './components/EvidenceModal'
 import { useInvestigationStream } from './api/sse'
+import { api } from './api/client'
 import type { ChangeProposal, Finding } from './types'
 
 function App() {
   const [selectedChange, setSelectedChange] = useState<ChangeProposal | undefined>(undefined)
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined)
   const [disconnectGraph, setDisconnectGraph] = useState(false)
+
+  // Evidence modal state — null means closed
+  const [evidenceFinding, setEvidenceFinding] = useState<Finding | null>(null)
+
+  // Rich findings: fetched from DB after SSE completes (have real FND-xxx IDs)
+  const [richFindings, setRichFindings] = useState<Finding[]>([])
 
   const {
     nodeStates,
@@ -25,21 +33,20 @@ function App() {
     stopStream,
   } = useInvestigationStream()
 
-  // Build a live findings list from nodeStates as FINDING_PRODUCED events arrive.
-  // We derive findings from nodeStates so they update reactively without extra state.
   const [streamFindings, setStreamFindings] = useState<Finding[]>([])
   const prevIsRunning = useRef(false)
 
-  // Reset findings when a new stream starts
+  // Reset on new stream start
   useEffect(() => {
     if (isRunning && !prevIsRunning.current) {
       setStreamFindings([])
+      setRichFindings([])
+      setEvidenceFinding(null)
     }
     prevIsRunning.current = isRunning
   }, [isRunning])
 
-  // Accumulate findings: whenever nodeStates changes during a run,
-  // synthesize Finding objects from the FINDING_PRODUCED entries.
+  // Build live findings from SSE node states during run
   useEffect(() => {
     if (!isRunning && !isComplete) return
     const produced: Finding[] = Object.entries(nodeStates)
@@ -56,22 +63,31 @@ function App() {
     setStreamFindings(produced)
   }, [nodeStates, isRunning, isComplete])
 
+  // After SSE completes → fetch real findings (with real FND-xxx IDs from FalkorDB)
+  useEffect(() => {
+    if (!isComplete || !streamSummary?.investigation_id) return
+    api.getInvestigation(streamSummary.investigation_id)
+      .then(inv => {
+        if (inv.findings && inv.findings.length > 0) {
+          setRichFindings(inv.findings)
+        }
+      })
+      .catch(err => console.error('Failed to fetch rich findings:', err))
+  }, [isComplete, streamSummary])
+
   const handleRunInvestigation = useCallback((changeId: string, memoryEnabled: boolean) => {
-    startStream({
-      changeId,
-      memoryEnabled,
-      disconnectGraph,
-      paceDelayS: 0.35,
-    })
+    startStream({ changeId, memoryEnabled, disconnectGraph, paceDelayS: 0.35 })
   }, [startStream, disconnectGraph])
 
-  // Derive findings + summary from the COMPLETE SSE event payload
   const summary = streamSummary?.summary
   const executionTimeMs = streamSummary?.execution_time_ms
+  const investigationId = streamSummary?.investigation_id
+
+  // Use real DB findings when available, fall back to live SSE findings
+  const findings = richFindings.length > 0 ? richFindings : streamFindings
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', width: '100vw', overflow: 'hidden' }}>
-      {/* Top Header Bar */}
       <TopNav
         selectedChange={selectedChange}
         isRunning={isRunning}
@@ -82,7 +98,6 @@ function App() {
         onToggleDisconnectGraph={() => setDisconnectGraph((prev) => !prev)}
       />
 
-      {/* 3-Panel Main Shell */}
       <div className="app-layout" style={{ flex: 1, height: 'calc(100vh - 48px)' }}>
         <LeftPanel
           onRunInvestigation={handleRunInvestigation}
@@ -108,7 +123,7 @@ function App() {
         </main>
 
         <RightPanel
-          findings={streamFindings}
+          findings={findings}
           redHerrings={[]}
           summary={summary}
           isRunning={isRunning}
@@ -116,11 +131,21 @@ function App() {
           selectedServiceId={selectedServiceId}
           onSelectService={setSelectedServiceId}
           disconnectGraph={disconnectGraph}
+          investigationId={investigationId}
+          onInspectFinding={setEvidenceFinding}
         />
       </div>
+
+      {/* Evidence Path Inspector Modal */}
+      {evidenceFinding && investigationId && (
+        <EvidenceModal
+          finding={evidenceFinding}
+          investigationId={investigationId}
+          onClose={() => setEvidenceFinding(null)}
+        />
+      )}
     </div>
   )
 }
 
 export default App
-

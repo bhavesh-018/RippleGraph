@@ -196,3 +196,52 @@ export interface BackendSSEMessage<T = unknown> {
   event: BackendSSEEventType
   data: T
 }
+
+// ── Feature 3: Evidence Path Inspector ──────────────────────────────────────
+export interface EvidenceIncident {
+  id: string
+  title: string
+  severity: string
+  description: string
+  occurred_at: string
+  mitigation: {
+    id: string
+    title: string
+    description: string
+    validation_method: string
+  } | null
+}
+
+export interface EvidenceResult {
+  finding: {
+    id: string
+    service_id: string
+    service_name: string
+    category: string
+    status: string
+    confidence: number
+    reasons: string[]
+    missing_claims: string[]
+    dependency_chains: string[][]
+    hop_depth: number
+    relevant_incidents: string[]
+    recommended_contract_id: string | null
+  }
+  service: {
+    id: string
+    name: string
+    tier: string
+    owner_team: string
+    description: string
+    runtime: string
+    port: number
+  } | null
+  incidents: EvidenceIncident[]
+  contract: {
+    id: string
+    version: string
+    description: string
+    status: string
+  } | null
+}
+
