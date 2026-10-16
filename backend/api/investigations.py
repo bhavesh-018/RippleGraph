@@ -17,6 +17,7 @@ from graph.client import get_graph
 from orchestrator.pipeline import run_pipeline
 from orchestrator.stream import stream_investigation
 from schemas.graph import InvestigationRequest, InvestigationResponse, FindingNode
+from schemas.history import InvestigationSummary, InvestigationHistoryResponse
 
 router = APIRouter(prefix="/api/investigations", tags=["Investigations"])
 
@@ -156,6 +157,89 @@ async def compare_memory_get(change_id: str = "CHG-001"):
     except Exception as exc:
         logger.exception("Memory comparison failed: %s", exc)
         raise HTTPException(status_code=500, detail=f"Comparison failed: {exc}")
+
+
+@router.get("/history", response_model=InvestigationHistoryResponse)
+async def list_investigation_history(limit: int = 50):
+    """
+    Return a rich, stats-enriched timeline of all past investigation runs,
+    ordered by creation time descending (newest first).
+
+    For each run, the response includes per-status finding counts and
+    average confidence, enabling the frontend History Timeline to display
+    at-a-glance health badges without a second request.
+
+    Query params:
+      - limit  (int, default 50)  Maximum number of runs to return.
+    """
+    graph = get_graph()
+
+    # Fetch all investigation nodes
+    try:
+        inv_res = graph.query(
+            "MATCH (inv:Investigation) "
+            "RETURN inv.id, inv.change_id, inv.change_title, inv.status, "
+            "       inv.memory_enabled, inv.created_at "
+            "ORDER BY inv.created_at DESC "
+            f"LIMIT {int(limit)}"
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Graph query failed: {exc}")
+
+    summaries: list[InvestigationSummary] = []
+    for row in inv_res.result_set:
+        inv_id, change_id, change_title, status, memory_enabled, created_at = row
+
+        # Fetch finding stats for this investigation
+        try:
+            fnd_res = graph.query(
+                "MATCH (inv:Investigation {id: $id})-[:PRODUCED]->(f:Finding) "
+                "RETURN f.status, f.confidence",
+                {"id": inv_id},
+            )
+        except Exception:
+            fnd_res = None
+
+        incompatible = at_risk = compatible = unaffected = 0
+        confidences: list[float] = []
+
+        if fnd_res:
+            for frow in fnd_res.result_set:
+                fstatus, fconf = frow
+                conf_val = float(fconf) if fconf is not None else 0.0
+                confidences.append(conf_val)
+                if fstatus == "incompatible":
+                    incompatible += 1
+                elif fstatus == "potential_downstream":
+                    at_risk += 1
+                elif fstatus == "compatible":
+                    compatible += 1
+                elif fstatus == "unaffected":
+                    unaffected += 1
+
+        avg_conf = round(sum(confidences) / len(confidences), 4) if confidences else 0.0
+        total_findings = incompatible + at_risk + compatible + unaffected
+
+        summaries.append(
+            InvestigationSummary(
+                investigation_id=inv_id,
+                change_id=change_id or "",
+                change_title=change_title or "",
+                status=status or "unknown",
+                memory_enabled=bool(memory_enabled),
+                disconnect_graph=False,
+                created_at=created_at or "",
+                findings_count=total_findings,
+                incompatible_count=incompatible,
+                at_risk_count=at_risk,
+                compatible_count=compatible,
+                unaffected_count=unaffected,
+                avg_confidence=avg_conf,
+                execution_time_ms=None,
+            )
+        )
+
+    return InvestigationHistoryResponse(total=len(summaries), investigations=summaries)
 
 
 @router.get("/{investigation_id}", response_model=Dict[str, Any])
