@@ -284,4 +284,25 @@ export interface MemoryComparisonResponse {
   investigation_id_without_memory: string
 }
 
+// ── Feature 6: Investigation History Timeline ────────────────────────────────
+export interface InvestigationSummary {
+  investigation_id: string
+  change_id: string
+  change_title: string
+  status: string
+  memory_enabled: boolean
+  disconnect_graph: boolean
+  created_at: string
+  findings_count: number
+  incompatible_count: number
+  at_risk_count: number
+  compatible_count: number
+  unaffected_count: number
+  avg_confidence: number
+  execution_time_ms: number | null
+}
 
+export interface InvestigationHistoryResponse {
+  total: number
+  investigations: InvestigationSummary[]
+}
