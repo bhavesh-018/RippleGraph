@@ -4,6 +4,7 @@ import {
   Layers,
   BrainCircuit,
   GitCompare,
+  History,
 } from 'lucide-react'
 import type { ChangeProposal } from '../types'
 import { api } from '../api/client'
@@ -15,6 +16,7 @@ interface LeftPanelProps {
   selectedChange?: ChangeProposal
   onSelectChange?: (change: ChangeProposal) => void
   onCompareMemory?: (changeId: string) => void
+  onOpenHistory?: () => void
 }
 
 export default function LeftPanel({
@@ -23,6 +25,7 @@ export default function LeftPanel({
   selectedChange,
   onSelectChange,
   onCompareMemory,
+  onOpenHistory,
 }: LeftPanelProps) {
   const [changes, setChanges] = useState<ChangeProposal[]>([])
   const [selectedId, setSelectedId] = useState('CHG-001')
@@ -365,6 +368,44 @@ export default function LeftPanel({
           <Play size={14} fill="currentColor" />
           <span>{isRunning ? 'Simulating Rehearsal...' : 'Run Change Rehearsal'}</span>
         </button>
+
+        {/* History Timeline button */}
+        {onOpenHistory && (
+          <button
+            type="button"
+            onClick={onOpenHistory}
+            disabled={isRunning}
+            title="View Investigation History Timeline"
+            style={{
+              marginTop: '8px',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              background: 'rgba(99, 102, 241, 0.1)',
+              border: '1px solid rgba(99, 102, 241, 0.3)',
+              borderRadius: '6px',
+              padding: '8px 14px',
+              color: '#818CF8',
+              fontSize: '12px',
+              fontFamily: 'var(--font-mono)',
+              fontWeight: 600,
+              cursor: isRunning ? 'not-allowed' : 'pointer',
+              transition: 'all 150ms ease',
+              opacity: isRunning ? 0.5 : 1,
+            }}
+            onMouseEnter={(e) => {
+              if (!isRunning) e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'
+            }}
+            onMouseLeave={(e) => {
+              if (!isRunning) e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)'
+            }}
+          >
+            <History size={13} />
+            <span>Investigation History</span>
+          </button>
+        )}
       </div>
     </aside>
   )

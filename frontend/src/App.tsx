@@ -8,9 +8,10 @@ import RightPanel from './components/RightPanel'
 import StreamLog from './components/StreamLog'
 import EvidenceModal from './components/EvidenceModal'
 import MemoryDiffModal from './components/MemoryDiffModal'
+import HistoryPanel from './components/HistoryPanel'
 import { useInvestigationStream } from './api/sse'
 import { api } from './api/client'
-import type { ChangeProposal, Finding } from './types'
+import type { ChangeProposal, Finding, InvestigationSummary } from './types'
 
 function App() {
   const [selectedChange, setSelectedChange] = useState<ChangeProposal | undefined>(undefined)
@@ -22,6 +23,10 @@ function App() {
 
   // Memory comparison modal state — null means closed
   const [compareChangeId, setCompareChangeId] = useState<string | null>(null)
+
+  // History timeline panel state
+  const [showHistory, setShowHistory] = useState(false)
+  const [replayedInvestigationId, setReplayedInvestigationId] = useState<string | null>(null)
 
   // Rich findings: fetched from DB after SSE completes (have real FND-xxx IDs)
   const [richFindings, setRichFindings] = useState<Finding[]>([])
@@ -110,6 +115,7 @@ function App() {
           selectedChange={selectedChange}
           onSelectChange={setSelectedChange}
           onCompareMemory={setCompareChangeId}
+          onOpenHistory={() => setShowHistory(true)}
         />
 
         <main className="center-panel">
@@ -155,6 +161,26 @@ function App() {
         <MemoryDiffModal
           changeId={compareChangeId}
           onClose={() => setCompareChangeId(null)}
+        />
+      )}
+
+      {/* Investigation History Timeline */}
+      {showHistory && (
+        <HistoryPanel
+          onClose={() => setShowHistory(false)}
+          activeInvestigationId={replayedInvestigationId ?? investigationId ?? null}
+          onReplay={(summary: InvestigationSummary) => {
+            setReplayedInvestigationId(summary.investigation_id)
+            // Load investigation findings from DB and surface them in RightPanel
+            api.getInvestigation(summary.investigation_id)
+              .then(inv => {
+                if (inv.findings && inv.findings.length > 0) {
+                  setRichFindings(inv.findings as Finding[])
+                }
+              })
+              .catch(err => console.error('Replay load failed:', err))
+            setShowHistory(false)
+          }}
         />
       )}
     </div>
