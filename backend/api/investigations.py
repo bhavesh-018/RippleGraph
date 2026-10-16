@@ -282,3 +282,182 @@ async def get_finding_evidence(investigation_id: str, finding_id: str):
         "incidents": incidents,
         "contract": contract,
     }
+
+@router.get("/{investigation_id}/checklist")
+async def export_checklist(investigation_id: str):
+    """
+    Generate a downloadable Markdown mitigation checklist from all findings
+    for a given investigation. Returned as a file attachment.
+    """
+    import json as _json
+    from datetime import datetime
+    from fastapi.responses import Response as FastAPIResponse
+
+    def _parse(raw):
+        try:
+            return _json.loads(raw) if raw else []
+        except Exception:
+            return []
+
+    graph = get_graph()
+
+    # Fetch investigation node
+    try:
+        inv_res = graph.query(
+            "MATCH (inv:Investigation {id: $id}) "
+            "RETURN inv.id, inv.change_id, inv.change_title, inv.status, inv.created_at",
+            {"id": investigation_id},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    if not inv_res.result_set:
+        raise HTTPException(status_code=404, detail=f"Investigation '{investigation_id}' not found.")
+
+    inv_id, change_id, change_title, inv_status, created_at = inv_res.result_set[0]
+
+    # Fetch all findings with related evidence (join produces one row per incident)
+    try:
+        fnd_res = graph.query(
+            "MATCH (inv:Investigation {id: $id})-[:PRODUCED]->(f:Finding) "
+            "OPTIONAL MATCH (f)-[:SUPPORTED_BY]->(i:Incident)-[:MITIGATED_BY]->(m:Mitigation) "
+            "OPTIONAL MATCH (f)-[:ABOUT_CONTRACT]->(cv:ContractVersion) "
+            "RETURN f.id, f.service_name, f.status, f.confidence, f.hop_depth, "
+            "       f.reasons, f.missing_claims, f.recommended_contract_id, "
+            "       i.id, i.title, i.severity, "
+            "       m.id, m.title, m.description, m.validation_method, "
+            "       cv.id, cv.version "
+            "ORDER BY f.confidence DESC",
+            {"id": investigation_id},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=str(exc))
+
+    # Aggregate: join produces duplicate rows when a finding has multiple incidents
+    findings_map: Dict[str, Any] = {}
+    for row in fnd_res.result_set:
+        (fid, svc_name, fstatus, fconf, hop,
+         reasons_raw, missing_raw, rec_contract,
+         inc_id, inc_title, inc_sev,
+         mit_id, mit_title, mit_desc, mit_val,
+         cv_id, cv_ver) = row
+
+        if fid not in findings_map:
+            findings_map[fid] = {
+                "id": fid,
+                "service_name": svc_name or fid,
+                "status": fstatus or "",
+                "confidence": float(fconf) if fconf else 0.0,
+                "hop_depth": int(hop) if hop else 0,
+                "reasons": _parse(reasons_raw),
+                "missing_claims": _parse(missing_raw),
+                "recommended_contract_id": rec_contract or None,
+                "incidents": [],
+                "contract": None,
+            }
+
+        f = findings_map[fid]
+
+        if inc_id and not any(i["id"] == inc_id for i in f["incidents"]):
+            mitigation = None
+            if mit_id:
+                mitigation = {
+                    "id": mit_id, "title": mit_title,
+                    "description": mit_desc, "validation_method": mit_val,
+                }
+            f["incidents"].append({
+                "id": inc_id, "title": inc_title,
+                "severity": inc_sev, "mitigation": mitigation,
+            })
+
+        if cv_id and not f["contract"]:
+            f["contract"] = {"id": cv_id, "version": cv_ver}
+
+    # ── Build Markdown ────────────────────────────────────────────────────────
+    lines = [
+        "# 🛡 RippleGraph — Mitigation Checklist", "",
+        f"**Investigation:** `{inv_id}`  ",
+        f"**Change:** {change_title} (`{change_id}`)  ",
+        f"**Status:** {inv_status}  ",
+        f"**Generated:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')}",
+        "", "---", "",
+        "## Summary", "",
+        "| Service | Status | Confidence | Hop |",
+        "|---------|--------|------------|-----|",
+    ]
+
+    for f in findings_map.values():
+        icon = (
+            "🔴" if "incompatible" in f["status"].lower()
+            else "🟡" if "potential" in f["status"].lower()
+            else "🟢"
+        )
+        lines.append(
+            f"| {f['service_name']} | {icon} {f['status'].upper()} "
+            f"| {int(f['confidence'] * 100)}% | Hop {f['hop_depth']} |"
+        )
+
+    lines += ["", "---", "", "## Findings & Action Items", ""]
+
+    for idx, f in enumerate(findings_map.values(), 1):
+        icon = (
+            "🔴" if "incompatible" in f["status"].lower()
+            else "🟡" if "potential" in f["status"].lower()
+            else "🟢"
+        )
+        lines += [
+            f"### {idx}. {f['service_name']} {icon}", "",
+            f"- **Status:** `{f['status'].upper()}`",
+            f"- **Agent Confidence:** {int(f['confidence'] * 100)}%",
+            f"- **Hop Depth:** {f['hop_depth']}",
+        ]
+
+        if f["reasons"]:
+            lines += ["", "**Audit Justification:**"]
+            for r in f["reasons"]:
+                lines.append(f"> {r}")
+
+        if f["missing_claims"]:
+            lines += ["", "**Missing Claims (must be added to new contract):**"]
+            for c in f["missing_claims"]:
+                lines.append(f"- [ ] `{c}`")
+
+        if f["recommended_contract_id"]:
+            lines += ["", f"**Recommended Migration Contract:** `{f['recommended_contract_id']}`"]
+
+        if f["incidents"]:
+            lines += ["", "**Historical Evidence:**"]
+            for inc in f["incidents"]:
+                sev = (inc.get("severity") or "").upper()
+                lines.append(f"- **[{inc['id']}]** {inc['title']} _(Severity: {sev})_")
+                if inc.get("mitigation"):
+                    m = inc["mitigation"]
+                    lines += [
+                        f"  - ✅ **Playbook:** {m['title']}",
+                        f"  - {m['description']}",
+                        f"  - **Validation:** {m['validation_method']}",
+                    ]
+
+        if f["contract"]:
+            lines += ["", f"**Transitional Contract:** `{f['contract']['id']}` v{f['contract']['version']}"]
+
+        lines += ["", "---", ""]
+
+    lines += [
+        "## Next Steps", "",
+        "1. Review all BREAKING services above and assign mitigation owners.",
+        "2. Apply recommended migration contracts to each affected service.",
+        "3. Re-run RippleGraph after contract updates to confirm blast radius is resolved.",
+        "",
+        "_Generated by RippleGraph Change Rehearsal Agent_",
+    ]
+
+    return FastAPIResponse(
+        content="\n".join(lines),
+        media_type="text/markdown",
+        headers={
+            "Content-Disposition": f'attachment; filename="ripplgraph-checklist-{inv_id}.md"',
+            "Access-Control-Expose-Headers": "Content-Disposition",
+        },
+    )
+
