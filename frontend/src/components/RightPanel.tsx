@@ -22,6 +22,8 @@ interface RightPanelProps {
     unaffected: number
   }
   disconnectGraph?: boolean
+  investigationId?: string
+  onInspectFinding?: (f: Finding) => void
 }
 
 export default function RightPanel({
@@ -33,6 +35,8 @@ export default function RightPanel({
   onSelectService,
   summary,
   disconnectGraph = false,
+  investigationId,
+  onInspectFinding,
 }: RightPanelProps) {
   const incompatibleCount = summary?.incompatible ?? findings.filter(f => f.status?.toLowerCase() === 'incompatible').length
   const potentialCount = summary?.potential_downstream ?? findings.filter(f => f.status?.toLowerCase().includes('potential')).length
@@ -296,6 +300,31 @@ export default function RightPanel({
                         />
                       </div>
                     </div>
+
+                    {/* Inspect Evidence button — only shown for real DB findings (not live-* SSE ones) */}
+                    {onInspectFinding && investigationId && !finding.id.startsWith('live-') && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onInspectFinding(finding) }}
+                        style={{
+                          alignSelf: 'flex-start',
+                          background: 'rgba(99,102,241,0.1)',
+                          border: '1px solid rgba(99,102,241,0.28)',
+                          borderRadius: '4px',
+                          padding: '3px 9px',
+                          cursor: 'pointer',
+                          color: '#A5B4FC',
+                          fontFamily: 'var(--font-mono)',
+                          fontSize: '10px',
+                          fontWeight: 600,
+                          marginTop: '2px',
+                          transition: 'background 150ms ease',
+                        }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.2)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}
+                      >
+                        Inspect Evidence →
+                      </button>
+                    )}
 
                     {/* Missing Claims (if any) */}
                     {finding.missing_claims && finding.missing_claims.length > 0 && (
