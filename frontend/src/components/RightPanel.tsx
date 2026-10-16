@@ -81,6 +81,33 @@ export default function RightPanel({
               VERIFIED
             </span>
           )}
+          {isComplete && investigationId && (
+            <button
+              onClick={() => window.open(`/api/investigations/${investigationId}/checklist`)}
+              title="Download mitigation checklist as Markdown"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px',
+                background: 'rgba(99,102,241,0.12)',
+                border: '1px solid rgba(99,102,241,0.3)',
+                borderRadius: '4px',
+                padding: '2px 7px',
+                cursor: 'pointer',
+                color: '#A5B4FC',
+                fontFamily: 'var(--font-mono)',
+                fontSize: '9px',
+                fontWeight: 700,
+                letterSpacing: '0.04em',
+                textTransform: 'uppercase',
+                transition: 'background 150ms ease',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.25)')}
+              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.12)')}
+            >
+              ⬇ Export Plan
+            </button>
+          )}
         </div>
       </div>
 
