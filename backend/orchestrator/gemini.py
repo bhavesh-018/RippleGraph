@@ -1,4 +1,4 @@
-﻿"""
+"""
 RippleGraph - Gemini LLM Integration
 
 Converts natural language questions about the service dependency graph
@@ -138,16 +138,36 @@ def nl_to_cypher(question: str, extra_context: Optional[str] = None) -> str:
 
     prompt = "\n".join(prompt_parts)
 
+    # Candidate models to try in sequence for maximum resilience
+    primary_model = settings.gemini_model or "gemini-flash-latest"
+    fallback_models = ["gemini-flash-latest", "gemini-3.8-flash", "gemini-3.5-flash"]
+    models_to_try = [primary_model] + [m for m in fallback_models if m != primary_model]
+
+    raw_cypher = ""
+    last_exc = None
+
     try:
         client = genai.Client(api_key=api_key)
-        response = client.models.generate_content(
-            model=settings.gemini_model,
-            contents=prompt,
-        )
-        raw_cypher = response.text or ""
+        for model_name in models_to_try:
+            try:
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                )
+                raw_cypher = response.text or ""
+                if raw_cypher.strip():
+                    break
+            except Exception as exc:
+                last_exc = exc
+                logger.warning("Gemini model '%s' failed: %s. Trying fallback...", model_name, exc)
+                continue
     except Exception as exc:
-        logger.exception("Gemini API call failed: %s", exc)
+        logger.exception("Gemini client initialization failed: %s", exc)
         raise RuntimeError(f"Gemini API error: {exc}") from exc
+
+    if not raw_cypher and last_exc:
+        logger.exception("All Gemini model attempts failed. Last error: %s", last_exc)
+        raise RuntimeError(f"Gemini API error: {last_exc}") from last_exc
 
     cypher = _clean_cypher(raw_cypher)
 

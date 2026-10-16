@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # Gemini LLM
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-1.5-flash"
+    gemini_model: str = "gemini-flash-latest"
 
 
 settings = Settings()

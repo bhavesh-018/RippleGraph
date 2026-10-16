@@ -18,6 +18,7 @@ from typing import Any, Dict, List
 
 from fastapi import APIRouter, HTTPException, Query
 
+from config import settings
 from graph.client import get_graph
 from orchestrator.gemini import nl_to_cypher
 
@@ -121,5 +122,5 @@ async def natural_language_query(
         "columns": columns,
         "records": records,
         "total": len(records),
-        "model": "gemini-1.5-flash",
+        "model": settings.gemini_model,
     }
