@@ -1,4 +1,4 @@
-﻿"""
+"""
 RippleGraph - Natural Language Graph Query API
 
 Provides:
@@ -95,7 +95,16 @@ async def natural_language_query(
         )
 
     # Step 3: Serialize results
-    columns: List[str] = result.header if hasattr(result, "header") and result.header else []
+    raw_header = getattr(result, "header", None) or []
+    columns: List[str] = []
+    for col in raw_header:
+        if isinstance(col, (list, tuple)) and len(col) >= 2:
+            columns.append(str(col[1]))
+        elif isinstance(col, (list, tuple)) and len(col) == 1:
+            columns.append(str(col[0]))
+        else:
+            columns.append(str(col))
+
     rows: List[List[Any]] = [_serialize_row(row) for row in result.result_set]
 
     # Build column-keyed records for easier frontend consumption
