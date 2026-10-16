@@ -3,10 +3,8 @@ import {
   X,
   BrainCircuit,
   TrendingUp,
-  ShieldAlert,
   ArrowRight,
   Sparkles,
-  Layers,
   RotateCcw,
 } from 'lucide-react'
 import type { MemoryComparisonResponse } from '../types'
