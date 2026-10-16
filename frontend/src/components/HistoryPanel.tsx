@@ -1,65 +1,67 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
+import {
+  Clock,
+  RefreshCw,
+  X,
+  Search,
+  Brain,
+  Zap,
+  ChevronRight,
+  AlertCircle,
+  CheckCircle2,
+  AlertTriangle,
+  Minus,
+} from "lucide-react";
 import { api } from "../api/client";
 import type { InvestigationSummary } from "../types";
 
 interface HistoryPanelProps {
   onReplay: (summary: InvestigationSummary) => void;
   onClose: () => void;
-  /** investigation_id currently shown in the graph, for highlight */
   activeInvestigationId?: string | null;
 }
 
-// -- helpers ------------------------------------------------------------------
+// ── helpers ───────────────────────────────────────────────────────────────────
 
 function formatRelative(iso: string): string {
-  if (!iso) return "�";
+  if (!iso) return "-";
   const diff = Date.now() - new Date(iso).getTime();
   const m = Math.floor(diff / 60000);
   if (m < 1) return "just now";
   if (m < 60) return `${m}m ago`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h ago`;
-  const d = Math.floor(h / 24);
-  return `${d}d ago`;
+  return `${Math.floor(h / 24)}d ago`;
 }
 
-function statusBadge(status: string, disconnected: boolean) {
-  if (disconnected)
-    return { label: "Proof Mode", color: "#a78bfa", bg: "rgba(167,139,250,0.12)" };
-  if (status === "completed")
-    return { label: "Completed", color: "#34d399", bg: "rgba(52,211,153,0.12)" };
-  if (status === "failed")
-    return { label: "Failed", color: "#f87171", bg: "rgba(248,113,113,0.12)" };
-  return { label: status, color: "#94a3b8", bg: "rgba(148,163,184,0.1)" };
+function riskAccent(item: InvestigationSummary): string {
+  if (item.incompatible_count > 0) return "#ef4444";
+  if (item.at_risk_count > 0) return "#f97316";
+  if (item.compatible_count > 0) return "#22c55e";
+  return "#64748b";
 }
 
-function riskColor(item: InvestigationSummary): string {
-  if (item.incompatible_count > 0) return "#f87171";
-  if (item.at_risk_count > 0) return "#fb923c";
-  if (item.compatible_count > 0) return "#34d399";
-  return "#94a3b8";
+function statusStyle(status: string, disconnected: boolean): { label: string; color: string; bg: string } {
+  if (disconnected) return { label: "Proof Mode", color: "#a78bfa", bg: "rgba(167,139,250,0.1)" };
+  if (status === "completed") return { label: "Complete", color: "#22c55e", bg: "rgba(34,197,94,0.1)" };
+  if (status === "failed") return { label: "Failed", color: "#ef4444", bg: "rgba(239,68,68,0.1)" };
+  return { label: status, color: "#94a3b8", bg: "rgba(148,163,184,0.08)" };
 }
 
-function confidencePct(val: number): string {
-  return `${Math.round(val * 100)}%`;
-}
+// ── component ─────────────────────────────────────────────────────────────────
 
-// -- component -----------------------------------------------------------------
-
-export default function HistoryPanel({
-  onReplay,
-  onClose,
-  activeInvestigationId,
-}: HistoryPanelProps) {
+export default function HistoryPanel({ onReplay, onClose, activeInvestigationId }: HistoryPanelProps) {
   const [items, setItems] = useState<InvestigationSummary[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [spinning, setSpinning] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setSpinning(true);
     try {
       const data = await api.getHistory(50);
       setItems(data.investigations);
@@ -68,12 +70,11 @@ export default function HistoryPanel({
       setError(e instanceof Error ? e.message : "Failed to load history");
     } finally {
       setLoading(false);
+      setTimeout(() => setSpinning(false), 600);
     }
   }, []);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { load(); }, [load]);
 
   const filtered = items.filter(
     (it) =>
@@ -83,317 +84,319 @@ export default function HistoryPanel({
   );
 
   return (
-    <div style={styles.overlay} onClick={onClose}>
-      <div style={styles.panel} onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
-        <div style={styles.header}>
-          <div style={styles.headerLeft}>
-            <span style={styles.headerIcon}>??</span>
+    <div style={s.overlay} onClick={onClose}>
+      <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+
+        {/* ── Header ── */}
+        <div style={s.header}>
+          <div style={s.headerLeft}>
+            <Clock size={18} color="#6366f1" />
             <div>
-              <h2 style={styles.title}>Investigation History</h2>
-              <p style={styles.subtitle}>
-                {loading ? "Loading�" : `${total} run${total !== 1 ? "s" : ""} stored`}
-              </p>
+              <h2 style={s.title}>Investigation History</h2>
+              <span style={s.subtitle}>
+                {loading ? "Loading..." : `${total} run${total !== 1 ? "s" : ""}`}
+              </span>
             </div>
           </div>
-          <button style={styles.closeBtn} onClick={onClose} aria-label="Close">
-            ?
+          <button style={s.iconBtn} onClick={onClose} aria-label="Close">
+            <X size={16} />
           </button>
         </div>
 
-        {/* Search */}
-        <div style={styles.searchRow}>
-          <input
-            style={styles.searchInput}
-            placeholder="Search by change ID, title, run ID�"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <button style={styles.refreshBtn} onClick={load} title="Refresh">
-            ?
+        {/* ── Search + Refresh ── */}
+        <div style={s.toolbar}>
+          <div style={s.searchWrap}>
+            <Search size={14} color="#64748b" style={{ flexShrink: 0 }} />
+            <input
+              style={s.searchInput}
+              placeholder="Search by ID, title, run ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+          <button
+            style={s.iconBtn}
+            onClick={load}
+            title="Refresh"
+            aria-label="Refresh"
+          >
+            <RefreshCw
+              size={14}
+              style={{ transition: "transform 0.6s", transform: spinning ? "rotate(360deg)" : "rotate(0deg)" }}
+            />
           </button>
         </div>
 
-        {/* Body */}
-        <div style={styles.list}>
+        {/* ── Column headers ── */}
+        {!loading && !error && filtered.length > 0 && (
+          <div style={s.colHeader}>
+            <span style={{ flex: 1 }}>Change</span>
+            <span style={{ width: 56, textAlign: "center" }}>Incomp.</span>
+            <span style={{ width: 56, textAlign: "center" }}>At Risk</span>
+            <span style={{ width: 56, textAlign: "center" }}>Compat.</span>
+            <span style={{ width: 72, textAlign: "center" }}>Confidence</span>
+            <span style={{ width: 60, textAlign: "right" }}>When</span>
+            <span style={{ width: 20 }} />
+          </div>
+        )}
+
+        {/* ── List ── */}
+        <div style={s.list}>
           {loading && (
-            <div style={styles.center}>
-              <div style={styles.spinner} />
-              <span style={{ color: "#64748b", marginLeft: 10 }}>Loading history�</span>
+            <div style={s.stateBox}>
+              <RefreshCw size={20} color="#6366f1" style={{ animation: "spin 1s linear infinite" }} />
+              <span style={{ color: "#64748b", fontSize: 13 }}>Loading runs...</span>
             </div>
           )}
 
           {!loading && error && (
-            <div style={styles.center}>
-              <span style={{ color: "#f87171" }}>? {error}</span>
-              <button style={styles.retryBtn} onClick={load}>Retry</button>
+            <div style={s.stateBox}>
+              <AlertCircle size={18} color="#ef4444" />
+              <span style={{ color: "#ef4444", fontSize: 13 }}>{error}</span>
+              <button style={s.textBtn} onClick={load}>Retry</button>
             </div>
           )}
 
           {!loading && !error && filtered.length === 0 && (
-            <div style={styles.center}>
-              <span style={{ color: "#475569", fontSize: 14 }}>
+            <div style={s.stateBox}>
+              <Clock size={20} color="#334155" />
+              <span style={{ color: "#475569", fontSize: 13 }}>
                 {search ? "No runs match your search." : "No investigation runs yet."}
               </span>
             </div>
           )}
 
           {!loading && !error && filtered.map((item) => {
-            const badge = statusBadge(item.status, item.disconnect_graph);
+            const badge = statusStyle(item.status, item.disconnect_graph);
+            const accent = riskAccent(item);
             const isActive = item.investigation_id === activeInvestigationId;
-            const risk = riskColor(item);
 
             return (
               <div
                 key={item.investigation_id}
-                style={{
-                  ...styles.card,
-                  ...(isActive ? styles.cardActive : {}),
-                }}
+                style={{ ...s.row, ...(isActive ? s.rowActive : {}) }}
                 onClick={() => onReplay(item)}
               >
-                {/* Left accent bar */}
-                <div style={{ ...styles.accentBar, background: risk }} />
+                {/* left accent */}
+                <div style={{ width: 3, alignSelf: "stretch", background: accent, borderRadius: 2, flexShrink: 0 }} />
 
-                <div style={styles.cardBody}>
-                  {/* Top row */}
-                  <div style={styles.cardTop}>
-                    <div style={styles.cardTitleGroup}>
-                      <span style={styles.changeId}>{item.change_id}</span>
-                      <span style={styles.changeTitle}>{item.change_title}</span>
-                    </div>
-                    <div style={styles.badgeGroup}>
-                      {isActive && (
-                        <span style={styles.activePill}>? Active</span>
-                      )}
-                      <span
-                        style={{
-                          ...styles.badge,
-                          color: badge.color,
-                          background: badge.bg,
-                        }}
-                      >
-                        {badge.label}
+                {/* change info */}
+                <div style={{ flex: 1, minWidth: 0, paddingLeft: 10 }}>
+                  <div style={s.rowTitle}>{item.change_title}</div>
+                  <div style={s.rowMeta}>
+                    <span style={{ color: "#6366f1", fontSize: 11, fontWeight: 600 }}>{item.change_id}</span>
+                    <span style={s.dot} />
+                    {item.memory_enabled
+                      ? <><Brain size={11} color="#a78bfa" /><span>Memory</span></>
+                      : <><Zap size={11} color="#64748b" /><span style={{ color: "#64748b" }}>Cold Start</span></>
+                    }
+                    <span style={s.dot} />
+                    <span style={{ color: badge.color, background: badge.bg, padding: "1px 6px", borderRadius: 4, fontSize: 10, fontWeight: 600 }}>
+                      {badge.label}
+                    </span>
+                    {isActive && (
+                      <span style={s.activePill}>
+                        <CheckCircle2 size={10} /> Active
                       </span>
-                    </div>
+                    )}
                   </div>
+                </div>
 
-                  {/* Stats row */}
-                  <div style={styles.statsRow}>
-                    <StatChip label="Incompatible" count={item.incompatible_count} color="#f87171" />
-                    <StatChip label="At Risk" count={item.at_risk_count} color="#fb923c" />
-                    <StatChip label="Compatible" count={item.compatible_count} color="#34d399" />
-                    <StatChip label="Unaffected" count={item.unaffected_count} color="#64748b" />
-                    <div style={styles.confidence}>
-                      <span style={styles.confLabel}>Confidence</span>
-                      <span style={styles.confValue}>{confidencePct(item.avg_confidence)}</span>
-                    </div>
-                  </div>
+                {/* stat columns */}
+                <StatCell value={item.incompatible_count} color="#ef4444" Icon={AlertCircle} />
+                <StatCell value={item.at_risk_count} color="#f97316" Icon={AlertTriangle} />
+                <StatCell value={item.compatible_count} color="#22c55e" Icon={CheckCircle2} />
+                <div style={{ ...s.statCell, width: 72 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: "#818cf8" }}>
+                    {Math.round(item.avg_confidence * 100)}%
+                  </span>
+                </div>
 
-                  {/* Footer row */}
-                  <div style={styles.footerRow}>
-                    <span style={styles.meta}>
-                      {item.memory_enabled ? "?? Memory ON" : "? Memory OFF"}
-                    </span>
-                    <span style={styles.meta}>
-                      {item.findings_count} finding{item.findings_count !== 1 ? "s" : ""}
-                    </span>
-                    <span style={{ ...styles.meta, marginLeft: "auto" }}>
-                      {formatRelative(item.created_at)}
-                    </span>
-                    <span style={styles.replayBtn}>Replay ?</span>
-                  </div>
+                {/* when */}
+                <div style={{ width: 60, textAlign: "right", fontSize: 11, color: "#475569", flexShrink: 0 }}>
+                  {formatRelative(item.created_at)}
+                </div>
+
+                {/* chevron */}
+                <div style={{ width: 20, display: "flex", alignItems: "center", justifyContent: "flex-end", flexShrink: 0 }}>
+                  <ChevronRight size={14} color="#334155" />
                 </div>
               </div>
             );
           })}
+        </div>
+
+        {/* ── Footer ── */}
+        <div style={s.footer}>
+          <Minus size={12} color="#334155" />
+          <span style={{ color: "#334155", fontSize: 11 }}>
+            Click any row to replay its findings in the right panel
+          </span>
         </div>
       </div>
     </div>
   );
 }
 
-// -- sub-components ------------------------------------------------------------
-
-function StatChip({ label, count, color }: { label: string; count: number; color: string }) {
+function StatCell({ value, color, Icon }: { value: number; color: string; Icon: React.ElementType }) {
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 56 }}>
-      <span style={{ fontSize: 15, fontWeight: 700, color }}>{count}</span>
-      <span style={{ fontSize: 10, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" }}>
-        {label}
-      </span>
+    <div style={{ ...s.statCell, width: 56 }}>
+      {value > 0
+        ? <><Icon size={11} color={color} /><span style={{ fontSize: 13, fontWeight: 600, color }}>{value}</span></>
+        : <span style={{ fontSize: 13, color: "#1e293b" }}>0</span>
+      }
     </div>
   );
 }
 
-// -- styles --------------------------------------------------------------------
+// ── styles ────────────────────────────────────────────────────────────────────
 
-const styles: Record<string, React.CSSProperties> = {
+const s: Record<string, React.CSSProperties> = {
   overlay: {
     position: "fixed",
     inset: 0,
-    background: "rgba(0,0,0,0.55)",
-    backdropFilter: "blur(4px)",
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(3px)",
     zIndex: 1100,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
   },
-  panel: {
-    background: "linear-gradient(160deg, #0f172a 0%, #1e293b 100%)",
-    border: "1px solid rgba(99,102,241,0.25)",
-    borderRadius: 16,
-    width: "min(760px, 94vw)",
-    maxHeight: "88vh",
+  modal: {
+    background: "#0f172a",
+    border: "1px solid #1e293b",
+    borderRadius: 12,
+    width: "min(820px, 95vw)",
+    maxHeight: "85vh",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    boxShadow: "0 24px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(99,102,241,0.1)",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
   },
   header: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "20px 24px 16px",
-    borderBottom: "1px solid rgba(255,255,255,0.06)",
+    padding: "16px 20px",
+    borderBottom: "1px solid #1e293b",
   },
-  headerLeft: { display: "flex", alignItems: "center", gap: 14 },
-  headerIcon: { fontSize: 28 },
-  title: { margin: 0, fontSize: 18, fontWeight: 700, color: "#f1f5f9" },
-  subtitle: { margin: 0, fontSize: 12, color: "#64748b", marginTop: 2 },
-  closeBtn: {
+  headerLeft: { display: "flex", alignItems: "center", gap: 10 },
+  title: { margin: 0, fontSize: 15, fontWeight: 600, color: "#f1f5f9", lineHeight: 1.2 },
+  subtitle: { fontSize: 11, color: "#475569", marginTop: 1, display: "block" },
+  iconBtn: {
     background: "none",
-    border: "1px solid rgba(255,255,255,0.1)",
-    color: "#94a3b8",
-    borderRadius: 8,
-    width: 32,
-    height: 32,
+    border: "1px solid #1e293b",
+    color: "#64748b",
+    borderRadius: 6,
+    width: 30,
+    height: 30,
     cursor: "pointer",
-    fontSize: 14,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    transition: "all 0.15s",
   },
-  searchRow: {
+  toolbar: {
     display: "flex",
     gap: 8,
-    padding: "14px 24px",
-    borderBottom: "1px solid rgba(255,255,255,0.04)",
+    padding: "10px 20px",
+    borderBottom: "1px solid #1e293b",
+    alignItems: "center",
+  },
+  searchWrap: {
+    flex: 1,
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#1e293b",
+    borderRadius: 6,
+    padding: "6px 10px",
+    border: "1px solid #334155",
   },
   searchInput: {
     flex: 1,
-    background: "rgba(255,255,255,0.05)",
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: 8,
-    color: "#e2e8f0",
+    background: "none",
+    border: "none",
+    color: "#cbd5e1",
     fontSize: 13,
-    padding: "8px 12px",
     outline: "none",
+    minWidth: 0,
   },
-  refreshBtn: {
-    background: "rgba(99,102,241,0.15)",
-    border: "1px solid rgba(99,102,241,0.3)",
-    color: "#818cf8",
-    borderRadius: 8,
-    width: 36,
-    cursor: "pointer",
-    fontSize: 18,
-    fontWeight: 700,
-    transition: "all 0.15s",
+  colHeader: {
+    display: "flex",
+    alignItems: "center",
+    padding: "6px 20px",
+    gap: 8,
+    borderBottom: "1px solid #1e293b",
+    fontSize: 10,
+    fontWeight: 600,
+    color: "#334155",
+    textTransform: "uppercase",
+    letterSpacing: "0.06em",
   },
   list: {
     flex: 1,
     overflowY: "auto",
-    padding: "12px 16px",
     display: "flex",
     flexDirection: "column",
-    gap: 8,
   },
-  center: {
+  stateBox: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 10,
     padding: "48px 0",
   },
-  spinner: {
-    width: 24,
-    height: 24,
-    border: "3px solid rgba(99,102,241,0.2)",
-    borderTop: "3px solid #818cf8",
-    borderRadius: "50%",
-    animation: "spin 0.8s linear infinite",
-  },
-  retryBtn: {
-    background: "rgba(99,102,241,0.15)",
-    border: "1px solid rgba(99,102,241,0.3)",
-    color: "#818cf8",
-    borderRadius: 8,
-    padding: "6px 16px",
-    cursor: "pointer",
-    fontSize: 13,
-  },
-  card: {
-    display: "flex",
-    background: "rgba(255,255,255,0.03)",
-    border: "1px solid rgba(255,255,255,0.06)",
-    borderRadius: 12,
-    overflow: "hidden",
-    cursor: "pointer",
-    transition: "all 0.18s ease",
-  },
-  cardActive: {
-    border: "1px solid rgba(99,102,241,0.5)",
-    background: "rgba(99,102,241,0.07)",
-    boxShadow: "0 0 0 1px rgba(99,102,241,0.2)",
-  },
-  accentBar: { width: 4, flexShrink: 0 },
-  cardBody: { flex: 1, padding: "12px 16px", display: "flex", flexDirection: "column", gap: 8 },
-  cardTop: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 },
-  cardTitleGroup: { display: "flex", flexDirection: "column", gap: 2 },
-  changeId: { fontSize: 10, color: "#6366f1", fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" },
-  changeTitle: { fontSize: 14, color: "#e2e8f0", fontWeight: 600, lineHeight: 1.3 },
-  badgeGroup: { display: "flex", alignItems: "center", gap: 6, flexShrink: 0 },
-  activePill: {
-    fontSize: 10,
-    color: "#34d399",
-    background: "rgba(52,211,153,0.12)",
-    border: "1px solid rgba(52,211,153,0.3)",
-    borderRadius: 20,
-    padding: "2px 8px",
-    fontWeight: 600,
-  },
-  badge: {
-    fontSize: 11,
-    fontWeight: 600,
-    borderRadius: 20,
-    padding: "2px 10px",
-    border: "1px solid transparent",
-  },
-  statsRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 16,
-    padding: "8px 0",
-    borderTop: "1px solid rgba(255,255,255,0.04)",
-    borderBottom: "1px solid rgba(255,255,255,0.04)",
-  },
-  confidence: { marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end" },
-  confLabel: { fontSize: 10, color: "#475569", textTransform: "uppercase", letterSpacing: "0.04em" },
-  confValue: { fontSize: 15, fontWeight: 700, color: "#818cf8" },
-  footerRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-  meta: { fontSize: 11, color: "#475569" },
-  replayBtn: {
-    fontSize: 11,
+  textBtn: {
+    background: "none",
+    border: "1px solid #1e293b",
     color: "#6366f1",
+    borderRadius: 6,
+    padding: "4px 12px",
+    cursor: "pointer",
+    fontSize: 12,
+  },
+  row: {
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    padding: "10px 20px 10px 12px",
+    borderBottom: "1px solid #0f172a",
+    cursor: "pointer",
+    transition: "background 0.12s",
+    background: "transparent",
+  },
+  rowActive: {
+    background: "rgba(99,102,241,0.06)",
+    borderLeft: "none",
+  },
+  rowTitle: { fontSize: 13, color: "#e2e8f0", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  rowMeta: { display: "flex", alignItems: "center", gap: 6, marginTop: 3, fontSize: 11, color: "#a78bfa" },
+  dot: { width: 3, height: 3, borderRadius: "50%", background: "#334155", flexShrink: 0 },
+  activePill: {
+    display: "flex",
+    alignItems: "center",
+    gap: 3,
+    fontSize: 10,
     fontWeight: 600,
-    letterSpacing: "0.03em",
-    marginLeft: 8,
+    color: "#22c55e",
+    background: "rgba(34,197,94,0.1)",
+    padding: "1px 6px",
+    borderRadius: 4,
+  },
+  statCell: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    flexShrink: 0,
+  },
+  footer: {
+    display: "flex",
+    alignItems: "center",
+    gap: 6,
+    padding: "8px 20px",
+    borderTop: "1px solid #1e293b",
+    background: "#080f1a",
   },
 };
