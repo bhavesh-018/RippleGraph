@@ -3,6 +3,7 @@ import {
   Play,
   Layers,
   BrainCircuit,
+  GitCompare,
 } from 'lucide-react'
 import type { ChangeProposal } from '../types'
 import { api } from '../api/client'
@@ -13,6 +14,7 @@ interface LeftPanelProps {
   stage: string
   selectedChange?: ChangeProposal
   onSelectChange?: (change: ChangeProposal) => void
+  onCompareMemory?: (changeId: string) => void
 }
 
 export default function LeftPanel({
@@ -20,6 +22,7 @@ export default function LeftPanel({
   isRunning,
   selectedChange,
   onSelectChange,
+  onCompareMemory,
 }: LeftPanelProps) {
   const [changes, setChanges] = useState<ChangeProposal[]>([])
   const [selectedId, setSelectedId] = useState('CHG-001')
@@ -288,6 +291,43 @@ export default function LeftPanel({
               ? 'Applies temporal decay formula e^(-0.05*dt) to prior findings in FalkorDB.'
               : 'Evaluates change in cold-start mode with zero historical context.'}
           </p>
+
+          {/* Dual-Mode Memory Diff Trigger */}
+          {onCompareMemory && (
+            <button
+              type="button"
+              onClick={() => onCompareMemory(currentChange?.id || 'CHG-001')}
+              disabled={isRunning}
+              title="Compare Cold Start (OFF) vs FalkorDB Memory (ON) side-by-side"
+              style={{
+                marginTop: '10px',
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                background: 'rgba(167, 139, 250, 0.1)',
+                border: '1px solid rgba(167, 139, 250, 0.3)',
+                borderRadius: '6px',
+                padding: '7px 10px',
+                color: '#DDD6FE',
+                fontSize: '11px',
+                fontFamily: 'var(--font-mono)',
+                fontWeight: 600,
+                cursor: isRunning ? 'not-allowed' : 'pointer',
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={(e) => {
+                if (!isRunning) e.currentTarget.style.background = 'rgba(167, 139, 250, 0.22)'
+              }}
+              onMouseLeave={(e) => {
+                if (!isRunning) e.currentTarget.style.background = 'rgba(167, 139, 250, 0.1)'
+              }}
+            >
+              <GitCompare size={13} color="#A78BFA" />
+              <span>Compare Memory Impact</span>
+            </button>
+          )}
         </div>
       </div>
 

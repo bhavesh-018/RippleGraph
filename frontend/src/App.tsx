@@ -7,6 +7,7 @@ import CenterGraph from './components/CenterGraph'
 import RightPanel from './components/RightPanel'
 import StreamLog from './components/StreamLog'
 import EvidenceModal from './components/EvidenceModal'
+import MemoryDiffModal from './components/MemoryDiffModal'
 import { useInvestigationStream } from './api/sse'
 import { api } from './api/client'
 import type { ChangeProposal, Finding } from './types'
@@ -18,6 +19,9 @@ function App() {
 
   // Evidence modal state — null means closed
   const [evidenceFinding, setEvidenceFinding] = useState<Finding | null>(null)
+
+  // Memory comparison modal state — null means closed
+  const [compareChangeId, setCompareChangeId] = useState<string | null>(null)
 
   // Rich findings: fetched from DB after SSE completes (have real FND-xxx IDs)
   const [richFindings, setRichFindings] = useState<Finding[]>([])
@@ -105,6 +109,7 @@ function App() {
           stage={stage}
           selectedChange={selectedChange}
           onSelectChange={setSelectedChange}
+          onCompareMemory={setCompareChangeId}
         />
 
         <main className="center-panel">
@@ -142,6 +147,14 @@ function App() {
           finding={evidenceFinding}
           investigationId={investigationId}
           onClose={() => setEvidenceFinding(null)}
+        />
+      )}
+
+      {/* Memory Comparison & Visual Diff Modal */}
+      {compareChangeId && (
+        <MemoryDiffModal
+          changeId={compareChangeId}
+          onClose={() => setCompareChangeId(null)}
         />
       )}
     </div>

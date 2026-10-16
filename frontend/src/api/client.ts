@@ -1,4 +1,4 @@
-import type { TopologyResponse, Investigation, ChangeProposal, EvidenceResult } from '../types'
+import type { TopologyResponse, Investigation, ChangeProposal, EvidenceResult, MemoryComparisonResponse } from '../types'
 
 async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -36,4 +36,11 @@ export const api = {
 
   getFindingEvidence: (investigationId: string, findingId: string) =>
     fetchJSON<EvidenceResult>(`/api/investigations/${investigationId}/findings/${findingId}/evidence`),
+
+  compareMemory: (changeId: string = 'CHG-001') =>
+    fetchJSON<MemoryComparisonResponse>('/api/investigations/compare', {
+      method: 'POST',
+      body: JSON.stringify({ change_id: changeId }),
+    }),
 }
+

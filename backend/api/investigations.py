@@ -119,6 +119,45 @@ async def list_investigations():
     return investigations
 
 
+from pydantic import BaseModel
+from orchestrator.comparison import compare_investigation_memory
+from schemas.comparison import MemoryComparisonResponse
+
+
+class CompareRequest(BaseModel):
+    change_id: str = "CHG-001"
+
+
+@router.post("/compare", response_model=MemoryComparisonResponse)
+async def compare_memory_post(req: Optional[CompareRequest] = None):
+    """
+    Execute Change Rehearsal with Memory ON vs Memory OFF and return
+    side-by-side confidence deltas and reaffirmation insights.
+    """
+    change_id = req.change_id if req else "CHG-001"
+    try:
+        return compare_investigation_memory(change_id=change_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Memory comparison failed: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {exc}")
+
+
+@router.get("/compare", response_model=MemoryComparisonResponse)
+async def compare_memory_get(change_id: str = "CHG-001"):
+    """
+    GET convenience endpoint for memory comparison.
+    """
+    try:
+        return compare_investigation_memory(change_id=change_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Memory comparison failed: %s", exc)
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {exc}")
+
+
 @router.get("/{investigation_id}", response_model=Dict[str, Any])
 async def get_investigation(investigation_id: str):
     """
@@ -460,4 +499,5 @@ async def export_checklist(investigation_id: str):
             "Access-Control-Expose-Headers": "Content-Disposition",
         },
     )
+
 
