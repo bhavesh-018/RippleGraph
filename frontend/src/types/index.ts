@@ -245,3 +245,43 @@ export interface EvidenceResult {
   } | null
 }
 
+// ── Feature 2: Memory Comparison & Visual Diff ──────────────────────────────
+export interface ServiceMemoryDelta {
+  service_id: string
+  service_name: string
+  status_with_memory: string
+  status_without_memory: string
+  confidence_with_memory: number
+  confidence_without_memory: number
+  confidence_delta: number
+  confidence_gain_pct: number
+  memory_reaffirmed: boolean
+  prior_finding_cited?: string | null
+  prior_investigation_id?: string | null
+  memory_explanation?: string | null
+  missing_claims: string[]
+}
+
+export interface MemoryComparisonSummary {
+  change_id: string
+  change_title: string
+  avg_confidence_with_memory: number
+  avg_confidence_without_memory: number
+  avg_confidence_delta: number
+  overall_confidence_gain_pct: number
+  reaffirmed_count: number
+  total_services_analyzed: number
+  execution_time_with_memory_ms: number
+  execution_time_without_memory_ms: number
+  memory_verdict: string
+}
+
+export interface MemoryComparisonResponse {
+  change_id: string
+  summary: MemoryComparisonSummary
+  deltas: ServiceMemoryDelta[]
+  investigation_id_with_memory: string
+  investigation_id_without_memory: string
+}
+
+
