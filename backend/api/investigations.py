@@ -178,3 +178,107 @@ async def get_investigation(investigation_id: str):
         "findings": findings,
         "findings_count": len(findings),
     }
+
+@router.get("/{investigation_id}/findings/{finding_id}/evidence")
+async def get_finding_evidence(investigation_id: str, finding_id: str):
+    """
+    Return the full evidence graph for a specific finding:
+    connected Service, Incidents (with Mitigations), and ContractVersion.
+    """
+    import json as _json
+
+    def _parse(raw):
+        try:
+            return _json.loads(raw) if raw else []
+        except Exception:
+            return []
+
+    graph = get_graph()
+
+    # Fetch finding node properties from FalkorDB
+    try:
+        fnd_res = graph.query(
+            "MATCH (f:Finding {id: $fid}) "
+            "RETURN f.id, f.service_id, f.service_name, f.category, f.status, "
+            "       f.confidence, f.reasons, f.missing_claims, f.dependency_chains, "
+            "       f.hop_depth, f.relevant_incidents, f.recommended_contract_id",
+            {"fid": finding_id},
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Graph query failed: {exc}")
+
+    if not fnd_res.result_set:
+        raise HTTPException(status_code=404, detail=f"Finding '{finding_id}' not found.")
+
+    row = fnd_res.result_set[0]
+    fid, svc_id, svc_name, cat, fstatus, conf, reasons_raw, missing_raw, chains_raw, hop, incidents_raw, rec_contract = row
+
+    finding_data = {
+        "id": fid,
+        "service_id": svc_id,
+        "service_name": svc_name,
+        "category": cat,
+        "status": fstatus,
+        "confidence": float(conf) if conf else 0.0,
+        "reasons": _parse(reasons_raw),
+        "missing_claims": _parse(missing_raw),
+        "dependency_chains": _parse(chains_raw),
+        "hop_depth": int(hop) if hop else 0,
+        "relevant_incidents": _parse(incidents_raw),
+        "recommended_contract_id": rec_contract or None,
+    }
+
+    # Fetch connected Service node
+    service = None
+    try:
+        svc_res = graph.query(
+            "MATCH (f:Finding {id: $fid})-[:ABOUT_SERVICE]->(s:Service) "
+            "RETURN s.id, s.name, s.tier, s.owner_team, s.description, s.runtime, s.port",
+            {"fid": finding_id},
+        )
+        if svc_res.result_set:
+            r = svc_res.result_set[0]
+            service = {"id": r[0], "name": r[1], "tier": r[2], "owner_team": r[3],
+                       "description": r[4], "runtime": r[5], "port": r[6]}
+    except Exception:
+        pass
+
+    # Fetch connected Incidents + their Mitigations
+    incidents = []
+    try:
+        inc_res = graph.query(
+            "MATCH (f:Finding {id: $fid})-[:SUPPORTED_BY]->(i:Incident) "
+            "OPTIONAL MATCH (i)-[:MITIGATED_BY]->(m:Mitigation) "
+            "RETURN i.id, i.title, i.severity, i.description, i.occurred_at, "
+            "       m.id, m.title, m.description, m.validation_method",
+            {"fid": finding_id},
+        )
+        for r in inc_res.result_set:
+            mitigation = None
+            if r[5]:
+                mitigation = {"id": r[5], "title": r[6], "description": r[7], "validation_method": r[8]}
+            incidents.append({"id": r[0], "title": r[1], "severity": r[2],
+                               "description": r[3], "occurred_at": r[4], "mitigation": mitigation})
+    except Exception:
+        pass
+
+    # Fetch connected ContractVersion
+    contract = None
+    try:
+        cv_res = graph.query(
+            "MATCH (f:Finding {id: $fid})-[:ABOUT_CONTRACT]->(cv:ContractVersion) "
+            "RETURN cv.id, cv.version, cv.description, cv.status",
+            {"fid": finding_id},
+        )
+        if cv_res.result_set:
+            r = cv_res.result_set[0]
+            contract = {"id": r[0], "version": r[1], "description": r[2], "status": r[3]}
+    except Exception:
+        pass
+
+    return {
+        "finding": finding_data,
+        "service": service,
+        "incidents": incidents,
+        "contract": contract,
+    }
