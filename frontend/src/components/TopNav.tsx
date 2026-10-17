@@ -79,12 +79,12 @@ export default function TopNav({
           </div>
         </div>
 
-        <div style={{ width: '1px', height: '16px', background: '#27272A' }} />
-
         {/* Selected change badge */}
         {selectedChange && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <>
+            <div style={{ width: '1px', height: '16px', background: '#27272A' }} />
             <span
+              title={selectedChange.title}
               style={{
                 fontFamily: 'var(--font-mono)',
                 fontSize: '10px',
@@ -93,14 +93,12 @@ export default function TopNav({
                 padding: '2px 6px',
                 borderRadius: '4px',
                 border: '1px solid #27272A',
+                cursor: 'default',
               }}
             >
               {selectedChange.id}
             </span>
-            <span style={{ fontSize: '12px', color: '#E4E4E7', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {selectedChange.title}
-            </span>
-          </div>
+          </>
         )}
       </div>
 
