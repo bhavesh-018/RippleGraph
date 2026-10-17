@@ -107,8 +107,9 @@ export default function TopNav({
       {/* 4-Stage Pipeline Progress Indicator */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         {stages.map((s, index) => {
-          const isCurrent = isRunning && stage.toLowerCase().includes(s.id)
-          const isPassed = isComplete || (isRunning && index < 2)
+          const currentStageIndex = stages.findIndex((stg) => stage.toLowerCase().includes(stg.id))
+          const isCurrent = isRunning && currentStageIndex === index
+          const isPassed = isComplete || (isRunning && currentStageIndex > index)
 
           let badgeColor = '#52525B'
           let badgeBg = '#18181B'
