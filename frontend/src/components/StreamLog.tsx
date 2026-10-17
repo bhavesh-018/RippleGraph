@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Terminal, X, Copy, Check } from 'lucide-react'
+import { Terminal, X, Copy, Check, ChevronUp, ChevronDown } from 'lucide-react'
 import type { LogEntry } from '../api/sse'
 
 interface StreamLogProps {
@@ -16,18 +16,7 @@ export default function StreamLog({
 }: StreamLogProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [copied, setCopied] = useState(false)
-  const prevRunning = useRef(isRunning)
   const logEndRef = useRef<HTMLDivElement>(null)
-
-  // Auto-open when rehearsal starts, auto-close when completed
-  useEffect(() => {
-    if (isRunning && !prevRunning.current) {
-      setIsOpen(true)
-    } else if (!isRunning && prevRunning.current) {
-      setIsOpen(false)
-    }
-    prevRunning.current = isRunning
-  }, [isRunning])
 
   // Auto-scroll to bottom as new log events stream in
   useEffect(() => {
@@ -69,6 +58,8 @@ export default function StreamLog({
     setTimeout(() => setCopied(false), 1800)
   }
 
+  const latestLog = logs.length > 0 ? logs[logs.length - 1] : null
+
   // If no logs yet, keep hidden until first rehearsal
   if (logs.length === 0 && !isRunning) {
     return null
@@ -76,12 +67,12 @@ export default function StreamLog({
 
   return (
     <>
-      {/* Closed State: Sleek Floating Console Trigger Button */}
+      {/* Closed State: Sleek Floating Live Ticker Pill */}
       {!isOpen && (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
-          title="Click to view live stream logs"
+          title="Click to expand live stream console"
           style={{
             position: 'absolute',
             bottom: '16px',
@@ -90,56 +81,100 @@ export default function StreamLog({
             zIndex: 20,
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            padding: '7px 14px',
-            background: 'rgba(18, 18, 22, 0.92)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid #27272A',
+            gap: '10px',
+            maxWidth: 'min(760px, calc(100% - 32px))',
+            padding: '6px 14px',
+            background: 'rgba(12, 12, 15, 0.94)',
+            backdropFilter: 'blur(12px)',
+            border: isRunning ? '1px solid rgba(6, 182, 212, 0.45)' : '1px solid #27272A',
             borderRadius: '20px',
             color: '#EDEDED',
-            fontSize: '12px',
+            fontSize: '11.5px',
             fontFamily: 'var(--font-mono)',
             cursor: 'pointer',
-            boxShadow: '0 6px 20px rgba(0, 0, 0, 0.5)',
-            transition: 'all 150ms ease',
+            boxShadow: isRunning
+              ? '0 6px 24px rgba(6, 182, 212, 0.16), 0 2px 8px rgba(0, 0, 0, 0.6)'
+              : '0 6px 20px rgba(0, 0, 0, 0.5)',
+            transition: 'all 200ms ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = '#3F3F46'
-            e.currentTarget.style.background = 'rgba(28, 28, 34, 0.96)'
+            e.currentTarget.style.borderColor = isRunning ? '#06B6D4' : '#3F3F46'
+            e.currentTarget.style.background = 'rgba(20, 20, 26, 0.98)'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = '#27272A'
-            e.currentTarget.style.background = 'rgba(18, 18, 22, 0.92)'
+            e.currentTarget.style.borderColor = isRunning ? 'rgba(6, 182, 212, 0.45)' : '#27272A'
+            e.currentTarget.style.background = 'rgba(12, 12, 15, 0.94)'
           }}
         >
-          <Terminal size={14} color="#06B6D4" />
-          <span style={{ fontWeight: 500 }}>Stream Log</span>
+          {/* Status Indicator & Type Pill */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            {isRunning ? (
+              <span
+                className="pulse-dot"
+                style={{ background: '#06B6D4', width: '7px', height: '7px' }}
+              />
+            ) : isComplete ? (
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '50%',
+                  background: '#10B981',
+                }}
+              />
+            ) : (
+              <Terminal size={12} color="#71717A" />
+            )}
+
+            {latestLog && (
+              <span
+                style={{
+                  fontSize: '9px',
+                  fontFamily: 'var(--font-mono)',
+                  fontWeight: 700,
+                  padding: '1px 6px',
+                  borderRadius: '3px',
+                  letterSpacing: '0.04em',
+                  color: logTypeStyle(latestLog.type).color,
+                  background: logTypeStyle(latestLog.type).bg,
+                  border: `1px solid ${logTypeStyle(latestLog.type).border}`,
+                }}
+              >
+                {latestLog.type}
+              </span>
+            )}
+          </div>
+
+          {/* Ticker Content (Latest Log Message) */}
           <span
             style={{
-              fontSize: '10.5px',
-              background: '#27272A',
-              color: '#A1A1AA',
-              padding: '1px 6px',
-              borderRadius: '10px',
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              color: isRunning ? '#F4F4F5' : '#A1A1AA',
+              textAlign: 'left',
             }}
           >
-            {logs.length} {logs.length === 1 ? 'event' : 'events'}
+            {latestLog ? latestLog.message : 'Stream Console'}
           </span>
-          {isRunning ? (
-            <span
-              className="pulse-dot"
-              style={{ background: '#06B6D4', width: '7px', height: '7px' }}
-            />
-          ) : isComplete ? (
+
+          {/* Event Count & Expand Button */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <span
               style={{
-                width: '6px',
-                height: '6px',
-                borderRadius: '50%',
-                background: '#10B981',
+                fontSize: '10px',
+                background: '#1F1F23',
+                color: '#71717A',
+                border: '1px solid #27272A',
+                padding: '1px 6px',
+                borderRadius: '8px',
               }}
-            />
-          ) : null}
+            >
+              {logs.length} {logs.length === 1 ? 'event' : 'events'}
+            </span>
+            <ChevronUp size={13} color="#A1A1AA" />
+          </div>
         </button>
       )}
 
@@ -153,7 +188,7 @@ export default function StreamLog({
             transform: 'translateX(-50%)',
             zIndex: 25,
             width: 'min(860px, calc(100% - 32px))',
-            height: '280px',
+            height: '240px',
             display: 'flex',
             flexDirection: 'column',
             background: 'rgba(10, 10, 13, 0.96)',
@@ -252,6 +287,34 @@ export default function StreamLog({
               >
                 {copied ? <Check size={12} /> : <Copy size={12} />}
                 <span>{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                title="Minimize to Live Ticker"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: '#18181C',
+                  border: '1px solid #27272A',
+                  borderRadius: '4px',
+                  padding: '4px 6px',
+                  color: '#A1A1AA',
+                  cursor: 'pointer',
+                  transition: 'all 120ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = '#EDEDED'
+                  e.currentTarget.style.borderColor = '#3F3F46'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = '#A1A1AA'
+                  e.currentTarget.style.borderColor = '#27272A'
+                }}
+              >
+                <ChevronDown size={14} />
               </button>
 
               <button
