@@ -20,6 +20,7 @@ from graph.client import health_check
 from api.topology import router as topology_router
 from api.investigations import router as investigations_router
 from api.changes import router as changes_router
+from api.nl_query import router as nl_query_router
 
 logging.basicConfig(
     level=settings.log_level.upper(),
@@ -61,6 +62,7 @@ app.add_middleware(
 app.include_router(topology_router)
 app.include_router(investigations_router)
 app.include_router(changes_router)
+app.include_router(nl_query_router)
 
 
 @app.get("/", tags=["General"])

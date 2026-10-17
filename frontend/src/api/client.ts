@@ -1,4 +1,12 @@
-import type { TopologyResponse, Investigation, ChangeProposal, EvidenceResult, MemoryComparisonResponse, InvestigationHistoryResponse } from '../types'
+import type {
+  TopologyResponse,
+  Investigation,
+  ChangeProposal,
+  EvidenceResult,
+  MemoryComparisonResponse,
+  InvestigationHistoryResponse,
+  NLQueryResult,
+} from '../types'
 
 async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(path, {
@@ -45,5 +53,12 @@ export const api = {
 
   getHistory: (limit: number = 50) =>
     fetchJSON<InvestigationHistoryResponse>(`/api/investigations/history?limit=${limit}`),
+
+  queryNaturalLanguage: (question: string, context?: string) =>
+    fetchJSON<NLQueryResult>(
+      `/api/graph/nl-query?question=${encodeURIComponent(question)}${
+        context ? `&context=${encodeURIComponent(context)}` : ''
+      }`
+    ),
 }
 

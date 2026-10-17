@@ -51,6 +51,7 @@ interface CenterGraphProps {
   originServiceId?: string
   selectedServiceId?: string
   onSelectService?: (serviceId: string) => void
+  highlightedServiceIds?: string[]
 }
 
 export default function CenterGraph({
@@ -58,6 +59,7 @@ export default function CenterGraph({
   originServiceId = 'auth-service',
   selectedServiceId,
   onSelectService,
+  highlightedServiceIds = [],
 }: CenterGraphProps) {
   const [nodes, setNodes] = useState<Node<ServiceData>[]>([])
   const [edges, setEdges] = useState<Edge[]>([])
@@ -116,6 +118,7 @@ export default function CenterGraph({
         const state = nodeStates[n.id]
         const status = state ? (state.status as NodeStatus) : (n.data.status || 'UNAFFECTED')
         const isOrigin = n.id === originServiceId
+        const isHighlighted = highlightedServiceIds.includes(n.id)
 
         return {
           ...n,
@@ -124,6 +127,7 @@ export default function CenterGraph({
             ...n.data,
             status,
             isOrigin,
+            isHighlighted,
           },
         }
       })
@@ -166,7 +170,7 @@ export default function CenterGraph({
         }
       })
     )
-  }, [nodeStates, originServiceId, selectedServiceId])
+  }, [nodeStates, originServiceId, selectedServiceId, highlightedServiceIds])
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {

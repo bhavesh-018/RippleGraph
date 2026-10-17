@@ -9,6 +9,7 @@ import StreamLog from './components/StreamLog'
 import EvidenceModal from './components/EvidenceModal'
 import MemoryDiffModal from './components/MemoryDiffModal'
 import HistoryPanel from './components/HistoryPanel'
+import NLQueryBar from './components/NLQueryBar'
 import { useInvestigationStream } from './api/sse'
 import { api } from './api/client'
 import type { ChangeProposal, Finding, InvestigationSummary } from './types'
@@ -17,6 +18,7 @@ function App() {
   const [selectedChange, setSelectedChange] = useState<ChangeProposal | undefined>(undefined)
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined)
   const [disconnectGraph, setDisconnectGraph] = useState(false)
+  const [highlightedServiceIds, setHighlightedServiceIds] = useState<string[]>([])
 
   // Evidence modal state — null means closed
   const [evidenceFinding, setEvidenceFinding] = useState<Finding | null>(null)
@@ -39,7 +41,6 @@ function App() {
     isComplete,
     streamSummary,
     startStream,
-    stopStream,
   } = useInvestigationStream()
 
   const [streamFindings, setStreamFindings] = useState<Finding[]>([])
@@ -118,12 +119,17 @@ function App() {
           onOpenHistory={() => setShowHistory(true)}
         />
 
-        <main className="center-panel">
+        <main className="center-panel" style={{ position: 'relative' }}>
+          <NLQueryBar
+            onHighlightServices={setHighlightedServiceIds}
+            selectedChangeId={selectedChange?.id}
+          />
           <CenterGraph
             nodeStates={nodeStates}
             originServiceId={selectedChange?.proposing_service || 'auth-service'}
             selectedServiceId={selectedServiceId}
             onSelectService={setSelectedServiceId}
+            highlightedServiceIds={highlightedServiceIds}
           />
           <StreamLog
             logs={logs}

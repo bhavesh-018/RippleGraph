@@ -22,6 +22,7 @@ export interface ServiceData {
   port?: number
   status?: NodeStatus
   isOrigin?: boolean
+  isHighlighted?: boolean
   apis?: Array<{
     id: string
     name: string
@@ -305,4 +306,14 @@ export interface InvestigationSummary {
 export interface InvestigationHistoryResponse {
   total: number
   investigations: InvestigationSummary[]
+}
+
+// ── Feature 7: Natural Language Graph Query ──────────────────────────────────
+export interface NLQueryResult {
+  question: string
+  cypher: string
+  columns: string[]
+  records: Array<Record<string, any>>
+  total: number
+  model?: string
 }

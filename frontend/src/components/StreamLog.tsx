@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Terminal, X, ChevronDown, Copy, Check } from 'lucide-react'
+import { Terminal, X, Copy, Check } from 'lucide-react'
 import type { LogEntry } from '../api/sse'
 
 interface StreamLogProps {

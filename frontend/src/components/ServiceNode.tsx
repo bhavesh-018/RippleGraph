@@ -15,6 +15,7 @@ import {
   AlertOctagon,
   AlertTriangle,
   CheckCircle2,
+  Sparkles,
 } from 'lucide-react'
 import type { ServiceData, NodeStatus } from '../types'
 
@@ -36,15 +37,22 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
   const IconComponent = (data.icon && ICON_MAP[data.icon]) ? ICON_MAP[data.icon] : Server
   const status = (data.status || 'UNAFFECTED').toUpperCase() as NodeStatus
   const isOrigin = Boolean(data.isOrigin)
+  const isHighlighted = Boolean(data.isHighlighted)
 
   // Status visual themes
   let borderColor = '#27272A'
   let statusBadgeBg = '#18181B'
   let statusBadgeText = '#71717A'
   let statusLabel = 'HEALTHY'
-  let StatusIcon = CheckCircle2
+  let StatusIcon: React.ComponentType<{ size?: number }> = CheckCircle2
 
-  if (isOrigin) {
+  if (isHighlighted) {
+    borderColor = '#06B6D4'
+    statusBadgeBg = 'rgba(6, 182, 212, 0.2)'
+    statusBadgeText = '#67E8F9'
+    statusLabel = 'QUERY MATCH'
+    StatusIcon = Sparkles
+  } else if (isOrigin) {
     borderColor = '#6366F1'
     statusBadgeBg = 'rgba(99, 102, 241, 0.15)'
     statusBadgeText = '#A5B4FC'
@@ -81,16 +89,22 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
   // Tier label formatting
   const tierStr = String(data.tier || 'core').toUpperCase()
 
+  const boxShadow = isHighlighted
+    ? '0 0 16px rgba(6, 182, 212, 0.4), 0 0 0 2px #06B6D4'
+    : selected
+    ? '0 0 0 2px #FFFFFF'
+    : '0 1px 4px rgba(0,0,0,0.4)'
+
   return (
     <div
-      className={isEvaluating ? 'node-evaluating node-scan' : undefined}
+      className={isEvaluating ? 'node-evaluating node-scan' : isHighlighted ? 'node-pulse' : undefined}
       style={{
         background: '#111113',
         border: `1.5px solid ${borderColor}`,
         borderRadius: '8px',
         padding: '12px 14px',
         width: '240px',
-        boxShadow: selected ? '0 0 0 2px #FFFFFF' : '0 1px 4px rgba(0,0,0,0.4)',
+        boxShadow,
         transition: 'border-color 300ms ease, box-shadow 300ms ease',
         position: 'relative',
         cursor: 'pointer',
