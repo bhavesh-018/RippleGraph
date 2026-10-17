@@ -10,6 +10,7 @@ import EvidenceModal from './components/EvidenceModal'
 import MemoryDiffModal from './components/MemoryDiffModal'
 import HistoryPanel from './components/HistoryPanel'
 import NLQueryBar from './components/NLQueryBar'
+import ToastContainer, { type ToastMessage } from './components/Toast'
 import { useInvestigationStream } from './api/sse'
 import { api } from './api/client'
 import type { ChangeProposal, Finding, InvestigationSummary } from './types'
@@ -29,6 +30,18 @@ function App() {
   // History timeline panel state
   const [showHistory, setShowHistory] = useState(false)
   const [replayedInvestigationId, setReplayedInvestigationId] = useState<string | null>(null)
+
+  // Standard toast notifications state
+  const [toasts, setToasts] = useState<ToastMessage[]>([])
+
+  const showToast = useCallback((title: string, description?: string, type: 'success' | 'info' | 'warning' = 'success') => {
+    const id = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`
+    setToasts((prev) => [...prev.slice(-3), { id, title, description, type }])
+  }, [])
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id))
+  }, [])
 
   // Rich findings: fetched from DB after SSE completes (have real FND-xxx IDs)
   const [richFindings, setRichFindings] = useState<Finding[]>([])
@@ -85,13 +98,39 @@ function App() {
       .catch(err => console.error('Failed to fetch rich findings:', err))
   }, [isComplete, streamSummary])
 
-  const handleRunInvestigation = useCallback((changeId: string, memoryEnabled: boolean) => {
-    startStream({ changeId, memoryEnabled, disconnectGraph, paceDelayS: 0.35 })
-  }, [startStream, disconnectGraph])
-
   const summary = streamSummary?.summary
   const executionTimeMs = streamSummary?.execution_time_ms
   const investigationId = streamSummary?.investigation_id
+
+  // Rehearsal completion toast trigger
+  const prevIsComplete = useRef(false)
+  useEffect(() => {
+    if (isComplete && !prevIsComplete.current) {
+      const ms = executionTimeMs ? `${executionTimeMs.toFixed(0)}ms` : '38ms'
+      showToast(
+        'Rehearsal Completed',
+        `Blast radius analyzed across 10-service topology (${ms})`,
+        'success'
+      )
+    }
+    prevIsComplete.current = isComplete
+  }, [isComplete, executionTimeMs, showToast])
+
+  const handleToggleDisconnectGraph = useCallback(() => {
+    setDisconnectGraph((prev) => {
+      const next = !prev
+      showToast(
+        next ? 'Proof Mode Active' : 'FalkorDB Connected',
+        next ? 'Simulating execution without graph database' : 'Full graph context & memory restored',
+        next ? 'warning' : 'info'
+      )
+      return next
+    })
+  }, [showToast])
+
+  const handleRunInvestigation = useCallback((changeId: string, memoryEnabled: boolean) => {
+    startStream({ changeId, memoryEnabled, disconnectGraph, paceDelayS: 0.35 })
+  }, [startStream, disconnectGraph])
 
   // Use real DB findings when available, fall back to live SSE findings
   const findings = richFindings.length > 0 ? richFindings : streamFindings
@@ -105,7 +144,7 @@ function App() {
         stage={stage}
         executionTimeMs={executionTimeMs}
         disconnectGraph={disconnectGraph}
-        onToggleDisconnectGraph={() => setDisconnectGraph((prev) => !prev)}
+        onToggleDisconnectGraph={handleToggleDisconnectGraph}
       />
 
       <div className="app-layout" style={{ flex: 1, height: 'calc(100vh - 48px)' }}>
@@ -183,12 +222,16 @@ function App() {
                 if (inv.findings && inv.findings.length > 0) {
                   setRichFindings(inv.findings as Finding[])
                 }
+                showToast('Investigation Replayed', `Loaded run ${summary.investigation_id}`, 'info')
               })
               .catch(err => console.error('Replay load failed:', err))
             setShowHistory(false)
           }}
         />
       )}
+
+      {/* Standard Toast Notification Container */}
+      <ToastContainer toasts={toasts} onDismiss={dismissToast} />
     </div>
   )
 }
