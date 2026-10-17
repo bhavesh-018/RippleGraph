@@ -161,6 +161,12 @@ class FindingNode(BaseModel):
     relevant_incidents: List[str] = Field(default_factory=list, description="Matched incident IDs")
     rejected_red_herrings: List[str] = Field(default_factory=list, description="Rejected red-herring incident IDs")
     created_at: Optional[str] = Field(default=None, description="ISO timestamp of finding creation")
+    decayed_confidence: Optional[float] = Field(default=None, description="Decayed confidence score from memory")
+    days_old: Optional[float] = Field(default=None, description="Age of prior finding in days")
+    decay_factor: Optional[float] = Field(default=None, description="Mathematical decay factor applied")
+    reaffirmed: Optional[bool] = Field(default=False, description="Whether this finding was reaffirmed by memory")
+    is_stale: Optional[bool] = Field(default=False, description="Whether prior finding was flagged as stale/resolved")
+    staleness_reason: Optional[str] = Field(default=None, description="Explanation of why finding is stale or resolved")
 
 
 class InvestigationResponse(BaseModel):

@@ -183,7 +183,18 @@ def apply_memory_to_findings(
         svc_id = finding["service_id"]
         prior = prior_by_svc.get(svc_id)
         if prior is None:
+            finding.setdefault("decayed_confidence", None)
+            finding.setdefault("days_old", None)
+            finding.setdefault("decay_factor", None)
+            finding.setdefault("reaffirmed", False)
+            finding.setdefault("is_stale", False)
+            finding.setdefault("staleness_reason", None)
             continue
+
+        # Propagate mathematical decay metadata from prior finding
+        finding["decayed_confidence"] = prior.get("decayed_confidence")
+        finding["days_old"] = prior.get("days_old")
+        finding["decay_factor"] = prior.get("decay_factor")
 
         current_status = finding["status"]
         prior_status = prior.get("status", "")
@@ -193,6 +204,8 @@ def apply_memory_to_findings(
             old_confidence = finding["confidence"]
             boosted = max(old_confidence, REAFFIRM_BOOST)
             finding["confidence"] = round(boosted, 4)
+            finding["reaffirmed"] = True
+            finding["is_stale"] = False
             finding.setdefault("reasons", []).append(
                 f"Memory boost: prior investigation '{prior['investigation_id']}' "
                 f"also flagged this service as {prior_status} "
@@ -206,7 +219,22 @@ def apply_memory_to_findings(
                 old_confidence,
                 boosted,
             )
+        elif prior_status in ("incompatible", "potential_downstream") and current_status == "compatible":
+            # Prior incompatibility is now resolved! Flag as stale
+            finding["reaffirmed"] = False
+            finding["is_stale"] = True
+            finding["staleness_reason"] = (
+                f"Prior investigation '{prior['investigation_id']}' flagged this service as {prior_status}, "
+                f"but current contract evaluation resolved the incompatibility."
+            )
+            finding.setdefault("reasons", []).append(
+                f"Memory staleness: prior finding '{prior.get('id', '')}' ({prior_status}) is now stale. "
+                f"Service is currently compatible."
+            )
+            logger.info("[Stage 2] Stale prior finding detected for %s (now compatible)", svc_id)
         else:
+            finding["reaffirmed"] = False
+            finding["is_stale"] = False
             # Different status from prior run: note the divergence but don't change
             finding.setdefault("reasons", []).append(
                 f"Memory context: prior investigation '{prior['investigation_id']}' "
