@@ -119,16 +119,14 @@ function App() {
   }, [isComplete, executionTimeMs, showToast])
 
   const handleToggleDisconnectGraph = useCallback(() => {
-    setDisconnectGraph((prev) => {
-      const next = !prev
-      showToast(
-        next ? 'Proof Mode Active' : 'FalkorDB Connected',
-        next ? 'Simulating execution without graph database' : 'Full graph context & memory restored',
-        next ? 'warning' : 'info'
-      )
-      return next
-    })
-  }, [showToast])
+    const next = !disconnectGraph
+    setDisconnectGraph(next)
+    showToast(
+      next ? 'Proof Mode Active' : 'FalkorDB Connected',
+      next ? 'Simulating execution without graph database' : 'Full graph context & memory restored',
+      next ? 'warning' : 'info'
+    )
+  }, [disconnectGraph, showToast])
 
   const handleRunInvestigation = useCallback((changeId: string, memoryEnabled: boolean) => {
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {

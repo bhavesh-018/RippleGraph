@@ -50,11 +50,11 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: () =>
         pointerEvents: 'auto',
         minWidth: '280px',
         maxWidth: '360px',
-        background: '#18181B',
-        border: '1px solid #27272A',
-        borderRadius: '6px',
+        background: '#FFFFFF',
+        border: '1px solid #E4E4E7',
+        borderRadius: '8px',
         padding: '10px 14px',
-        boxShadow: '0 8px 24px rgba(0, 0, 0, 0.45)',
+        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.18)',
         display: 'flex',
         alignItems: 'flex-start',
         gap: '10px',
@@ -72,11 +72,11 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: () =>
       </div>
 
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px' }}>
-        <span style={{ fontSize: '12px', fontWeight: 600, color: '#EDEDED' }}>
+        <span style={{ fontSize: '12px', fontWeight: 600, color: '#18181B' }}>
           {toast.title}
         </span>
         {toast.description && (
-          <span style={{ fontSize: '11px', color: '#A1A1AA', fontFamily: 'var(--font-mono)', lineHeight: 1.35 }}>
+          <span style={{ fontSize: '11px', color: '#52525B', fontFamily: 'var(--font-mono)', lineHeight: 1.35 }}>
             {toast.description}
           </span>
         )}
@@ -88,7 +88,7 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: () =>
         style={{
           background: 'transparent',
           border: 'none',
-          color: '#71717A',
+          color: '#A1A1AA',
           cursor: 'pointer',
           padding: '2px',
           display: 'flex',
@@ -97,8 +97,8 @@ function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: () =>
           borderRadius: '3px',
           marginTop: '2px',
         }}
-        onMouseEnter={(e) => (e.currentTarget.style.color = '#EDEDED')}
-        onMouseLeave={(e) => (e.currentTarget.style.color = '#71717A')}
+        onMouseEnter={(e) => (e.currentTarget.style.color = '#18181B')}
+        onMouseLeave={(e) => (e.currentTarget.style.color = '#A1A1AA')}
       >
         <X size={12} />
       </button>
