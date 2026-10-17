@@ -152,6 +152,17 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover { background: var(--border-focus); }
 
+/* ── Hide scrollbar utility ─────────────────────────────────────── */
+.hide-scrollbar {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
 /* ── Divider */
 .divider {
   height: 1px;
@@ -323,4 +334,209 @@ body {
   }
 }
 
+/* ── Spinner / Loader Animations ────────────────────────────────── */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin,
+.spin {
+  animation: spin 1s linear infinite !important;
+  transform-origin: center;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* ── Toast animation ────────────────────────────────────────────── */
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ── Responsive & Mobile Breakpoints ────────────────────────────── */
+
+/* Hide / Show helper classes */
+.mobile-nav-bar {
+  display: none;
+}
+
+.stage-name-mobile {
+  display: none !important;
+}
+.stage-name-desktop {
+  display: inline !important;
+}
+
+.mobile-label {
+  display: none !important;
+}
+.desktop-label {
+  display: inline !important;
+}
+
+/* Tablet & Mobile (< 1024px) */
+@media (max-width: 1023px) {
+  .app-layout {
+    position: relative;
+    padding-bottom: 52px;
+  }
+
+  .left-panel.mobile-tab-hidden,
+  .center-panel.mobile-tab-hidden,
+  .right-panel.mobile-tab-hidden {
+    display: none !important;
+  }
+
+  .left-panel.mobile-tab-active,
+  .center-panel.mobile-tab-active,
+  .right-panel.mobile-tab-active {
+    display: flex !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    max-width: 100% !important;
+    flex: 1 !important;
+    height: 100% !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  /* Stream Log ticker & window positioned above mobile bottom bar */
+  .stream-log-pill,
+  .stream-log-modal {
+    bottom: 64px !important;
+    width: min(760px, calc(100% - 24px)) !important;
+  }
+
+  /* Mobile Navigation Bar */
+  .mobile-nav-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    height: 52px;
+    background: rgba(13, 13, 15, 0.98);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid #1F1F24;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    padding: 0 4px;
+  }
+
+  .mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 100%;
+    background: transparent;
+    border: none;
+    color: #71717A;
+    font-size: 10px;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 150ms ease;
+    position: relative;
+  }
+
+  .mobile-nav-btn.active {
+    color: #06B6D4;
+    font-weight: 600;
+  }
+
+  .mobile-nav-btn.active::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 24%;
+    right: 24%;
+    height: 2px;
+    background: #06B6D4;
+    border-radius: 2px;
+  }
+
+  .mobile-badge-count {
+    position: absolute;
+    top: 6px;
+    right: 22%;
+    background: #EF4444;
+    color: #FFFFFF;
+    font-size: 9px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    padding: 0 5px;
+    border-radius: 8px;
+    line-height: 13px;
+  }
+}
+
+/* Mobile Small Devices (< 768px) */
+@media (max-width: 768px) {
+  .stage-name-desktop {
+    display: none !important;
+  }
+  .stage-name-mobile {
+    display: inline !important;
+  }
+
+  /* Toast notification on mobile stays above bottom bar */
+  .toast-container {
+    bottom: 64px !important;
+    right: 12px !important;
+    left: 12px !important;
+  }
+
+  /* TopNav: hide stage pipeline on tiny screens, show compact versions */
+  .top-nav-header {
+    padding: 0 10px !important;
+    gap: 6px !important;
+  }
+
+  /* Panel body tighter on small screens */
+  .panel-body {
+    padding: 10px !important;
+  }
+}
+
+/* Mobile Ultra-compact (< 640px) */
+@media (max-width: 639px) {
+  .desktop-label {
+    display: none !important;
+  }
+  .mobile-label {
+    display: inline !important;
+  }
+
+  /* TopNav: hide stage pipeline badges entirely on very small phones */
+  .top-nav-stage-pipeline {
+    display: none !important;
+  }
+
+  /* Modals full screen on very small devices */
+  .evidence-modal-box,
+  .memory-diff-modal-box,
+  .history-panel-box {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+  }
+}
 

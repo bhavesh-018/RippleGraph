@@ -7,10 +7,13 @@ import {
   FilterX,
   Sparkles,
   Clock,
+  Loader2,
+  Download,
 } from 'lucide-react'
 import type { Finding, RedHerring } from '../types'
 
 interface RightPanelProps {
+  className?: string
   findings: Finding[]
   redHerrings?: RedHerring[]
   isRunning: boolean
@@ -29,6 +32,7 @@ interface RightPanelProps {
 }
 
 export default function RightPanel({
+  className = '',
   findings,
   redHerrings = [],
   isRunning,
@@ -45,7 +49,7 @@ export default function RightPanel({
   const compatibleCount = summary?.compatible ?? findings.filter(f => f.status?.toLowerCase() === 'compatible').length
 
   return (
-    <aside className="right-panel">
+    <aside className={`right-panel ${className}`.trim()}>
       {/* Panel Header */}
       <div className="panel-header" style={{ padding: '12px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -63,24 +67,13 @@ export default function RightPanel({
                 color: '#67E8F9',
                 padding: '2px 6px',
                 borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
             >
+              <Loader2 size={10} className="animate-spin" />
               INVESTIGATING
-            </span>
-          )}
-          {isComplete && (
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '9px',
-                fontWeight: 700,
-                background: 'rgba(16, 185, 129, 0.2)',
-                color: '#6EE7B7',
-                padding: '2px 6px',
-                borderRadius: '4px',
-              }}
-            >
-              VERIFIED
             </span>
           )}
           {isComplete && investigationId && (
@@ -90,24 +83,29 @@ export default function RightPanel({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '3px',
-                background: 'rgba(99,102,241,0.12)',
-                border: '1px solid rgba(99,102,241,0.3)',
+                gap: '4px',
+                background: 'transparent',
+                border: '1px solid #3F3F46',
                 borderRadius: '4px',
-                padding: '2px 7px',
+                padding: '3px 8px',
                 cursor: 'pointer',
-                color: '#A5B4FC',
+                color: '#A1A1AA',
                 fontFamily: 'var(--font-mono)',
-                fontSize: '9px',
-                fontWeight: 700,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                transition: 'background 150ms ease',
+                fontSize: '10px',
+                fontWeight: 500,
+                transition: 'border-color 150ms ease, color 150ms ease',
               }}
-              onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.25)')}
-              onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.12)')}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#71717A'
+                e.currentTarget.style.color = '#EDEDED'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = '#3F3F46'
+                e.currentTarget.style.color = '#A1A1AA'
+              }}
             >
-              ⬇ Export Plan
+              <Download size={11} />
+              Export
             </button>
           )}
         </div>

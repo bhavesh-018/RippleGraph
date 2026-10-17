@@ -1,14 +1,62 @@
 import { useState, useEffect } from 'react'
+import React from 'react'
 import {
   X,
   BrainCircuit,
   TrendingUp,
-  ArrowRight,
+  ArrowDown,
   Sparkles,
   RotateCcw,
+  Zap,
 } from 'lucide-react'
 import type { MemoryComparisonResponse } from '../types'
 import { api } from '../api/client'
+
+/* ── Shared style constants ────────────────────────────── */
+const statCard: React.CSSProperties = {
+  background: '#0D0D10',
+  border: '1px solid #1F1F24',
+  borderRadius: '6px',
+  padding: '8px 10px',
+}
+const statLabel: React.CSSProperties = {
+  fontSize: '9px',
+  fontFamily: 'var(--font-mono)',
+  textTransform: 'uppercase' as const,
+  letterSpacing: '0.04em',
+  display: 'block',
+  marginBottom: '2px',
+}
+const statValue: React.CSSProperties = {
+  fontSize: '18px',
+  fontWeight: 700,
+  lineHeight: 1.1,
+}
+const statSub: React.CSSProperties = {
+  fontSize: '9px',
+  color: '#3F3F46',
+  fontFamily: 'var(--font-mono)',
+  marginTop: '2px',
+  display: 'block',
+}
+const compareCard: React.CSSProperties = {
+  background: '#0D0D10',
+  border: '1px solid #1E1E24',
+  borderRadius: '6px',
+  padding: '8px 10px',
+}
+const barTrack: React.CSSProperties = {
+  width: '100%',
+  height: '4px',
+  background: '#27272A',
+  borderRadius: '2px',
+  overflow: 'hidden',
+}
+const barFill: React.CSSProperties = {
+  height: '100%',
+  borderRadius: '2px',
+  transition: 'width 500ms ease',
+}
 
 interface MemoryDiffModalProps {
   changeId: string
@@ -50,39 +98,44 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        padding: '12px',
         animation: 'log-pop 180ms ease-out',
       }}
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        className="memory-diff-modal-box"
         style={{
           background: '#0F0F12',
           border: '1px solid #27272A',
           borderRadius: '12px',
-          width: '780px',
-          maxWidth: '95vw',
-          maxHeight: '88vh',
+          width: '100%',
+          maxWidth: '780px',
+          maxHeight: 'calc(100dvh - 24px)',
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
           boxShadow: '0 24px 64px rgba(0, 0, 0, 0.85)',
         }}
       >
-        {/* Header */}
+        {/* ── Header ── */}
         <div
           style={{
             display: 'flex',
-            alignItems: 'center',
+            alignItems: 'flex-start',
             justifyContent: 'space-between',
-            padding: '14px 20px',
+            padding: '12px 14px',
             borderBottom: '1px solid #1F1F24',
             background: '#131317',
             flexShrink: 0,
+            gap: '10px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {/* Left: icon + title */}
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', minWidth: 0 }}>
             <div
               style={{
+                flexShrink: 0,
                 width: '28px',
                 height: '28px',
                 borderRadius: '6px',
@@ -95,9 +148,9 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
             >
               <BrainCircuit size={16} color="#A78BFA" />
             </div>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ fontSize: '14px', fontWeight: 600, color: '#EDEDED' }}>
+            <div style={{ minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: '#EDEDED', lineHeight: 1.3 }}>
                   Temporal Memory Comparison
                 </span>
                 <span
@@ -109,39 +162,40 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
                     padding: '1px 6px',
                     borderRadius: '4px',
                     border: '1px solid #2E2E35',
+                    flexShrink: 0,
                   }}
                 >
                   {changeId}
                 </span>
               </div>
-              <p style={{ fontSize: '11px', color: '#71717A', margin: 0 }}>
-                Visual diff comparing Cold Start (Memory OFF) vs FalkorDB Graph Memory (Memory ON)
+              <p style={{ fontSize: '10px', color: '#52525B', margin: '2px 0 0', lineHeight: 1.4 }}>
+                Cold Start (Memory OFF) vs FalkorDB Graph Memory (Memory ON)
               </p>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          {/* Right: actions */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
             <button
               type="button"
               onClick={loadComparison}
               disabled={loading}
-              title="Re-run dual-mode comparison"
+              title={loading ? 'Comparing...' : 'Re-run comparison'}
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: '5px',
+                gap: '4px',
                 background: '#1C1C21',
                 border: '1px solid #27272A',
                 borderRadius: '4px',
-                padding: '4px 8px',
+                padding: '5px 8px',
                 color: '#A1A1AA',
                 fontSize: '11px',
                 cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 150ms ease',
               }}
             >
               <RotateCcw size={12} className={loading ? 'spin' : ''} />
-              <span>{loading ? 'Comparing...' : 'Refresh'}</span>
+              <span>{loading ? 'Running...' : 'Refresh'}</span>
             </button>
 
             <button
@@ -151,7 +205,7 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
                 background: '#1C1C21',
                 border: '1px solid #27272A',
                 borderRadius: '4px',
-                padding: '4px',
+                padding: '5px',
                 color: '#A1A1AA',
                 cursor: 'pointer',
                 display: 'flex',
@@ -164,15 +218,15 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
           </div>
         </div>
 
-        {/* Content Body */}
+        {/* ── Body ── */}
         <div
           style={{
             flex: 1,
             overflowY: 'auto',
-            padding: '18px 20px',
+            padding: '12px 14px',
             display: 'flex',
             flexDirection: 'column',
-            gap: '16px',
+            gap: '12px',
             scrollbarWidth: 'thin',
             scrollbarColor: '#27272A #0F0F12',
           }}
@@ -201,58 +255,54 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
 
           {data && !loading && (
             <>
-              {/* Scoreboard / Verdict Summary */}
+              {/* ── Scoreboard: 2×2 grid (fits all screen sizes) ── */}
               <div
                 style={{
                   background: 'linear-gradient(180deg, #16161B 0%, #111115 100%)',
                   border: '1px solid #27272A',
                   borderRadius: '10px',
-                  padding: '14px 16px',
+                  padding: '12px',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '12px',
+                  gap: '10px',
                 }}
               >
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
-                  {/* Cold Start Avg */}
-                  <div style={{ background: '#0D0D10', border: '1px solid #1F1F24', borderRadius: '6px', padding: '8px 12px' }}>
-                    <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#71717A', textTransform: 'uppercase' }}>
-                      Cold Start (Off)
-                    </span>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#A1A1AA', marginTop: '2px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' }}>
+                  {/* Cold Start */}
+                  <div style={statCard}>
+                    <span style={{ ...statLabel, color: '#71717A' }}>Cold Start</span>
+                    <div style={{ ...statValue, color: '#A1A1AA' }}>
                       {Math.round(data.summary.avg_confidence_without_memory * 100)}%
                     </div>
+                    <span style={statSub}>Memory OFF</span>
                   </div>
 
-                  {/* FalkorDB Avg */}
-                  <div style={{ background: '#0D0D10', border: '1px solid #1F1F24', borderRadius: '6px', padding: '8px 12px' }}>
-                    <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#A78BFA', textTransform: 'uppercase' }}>
-                      FalkorDB Memory (On)
-                    </span>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#C4B5FD', marginTop: '2px' }}>
+                  {/* FalkorDB */}
+                  <div style={statCard}>
+                    <span style={{ ...statLabel, color: '#A78BFA' }}>FalkorDB</span>
+                    <div style={{ ...statValue, color: '#C4B5FD' }}>
                       {Math.round(data.summary.avg_confidence_with_memory * 100)}%
                     </div>
+                    <span style={statSub}>Memory ON</span>
                   </div>
 
-                  {/* Confidence Gain */}
-                  <div style={{ background: '#0D0D10', border: '1px solid #1F1F24', borderRadius: '6px', padding: '8px 12px' }}>
-                    <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#10B981', textTransform: 'uppercase' }}>
-                      Confidence Boost
-                    </span>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#34D399', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <TrendingUp size={16} />
+                  {/* Confidence Boost */}
+                  <div style={statCard}>
+                    <span style={{ ...statLabel, color: '#10B981' }}>Boost</span>
+                    <div style={{ ...statValue, color: '#34D399', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <TrendingUp size={14} />
                       <span>+{data.summary.overall_confidence_gain_pct}%</span>
                     </div>
+                    <span style={statSub}>Confidence gain</span>
                   </div>
 
-                  {/* Reaffirmed Count */}
-                  <div style={{ background: '#0D0D10', border: '1px solid #1F1F24', borderRadius: '6px', padding: '8px 12px' }}>
-                    <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#06B6D4', textTransform: 'uppercase' }}>
-                      Reaffirmed Failures
-                    </span>
-                    <div style={{ fontSize: '18px', fontWeight: 700, color: '#67E8F9', marginTop: '2px' }}>
-                      {data.summary.reaffirmed_count} / {data.summary.total_services_analyzed}
+                  {/* Reaffirmed */}
+                  <div style={statCard}>
+                    <span style={{ ...statLabel, color: '#06B6D4' }}>Reaffirmed</span>
+                    <div style={{ ...statValue, color: '#67E8F9' }}>
+                      {data.summary.reaffirmed_count}/{data.summary.total_services_analyzed}
                     </div>
+                    <span style={statSub}>Services</span>
                   </div>
                 </div>
 
@@ -303,10 +353,10 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
                           transition: 'border-color 150ms ease',
                         }}
                       >
-                        {/* Service Header */}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 600, color: '#EDEDED' }}>
+                        {/* Service header row — wraps naturally on narrow screens */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '6px', flexWrap: 'wrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: '12px', fontWeight: 600, color: '#EDEDED' }}>
                               {d.service_name}
                             </span>
                             <span
@@ -319,6 +369,7 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
                                 border: `1px solid ${isBreaking ? '#EF4444' : '#F59E0B'}`,
                                 padding: '1px 5px',
                                 borderRadius: '3px',
+                                whiteSpace: 'nowrap',
                               }}
                             >
                               {d.status_with_memory.toUpperCase()}
@@ -330,54 +381,56 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
                               style={{
                                 display: 'flex',
                                 alignItems: 'center',
-                                gap: '4px',
-                                fontSize: '10px',
+                                gap: '3px',
+                                fontSize: '9px',
                                 fontFamily: 'var(--font-mono)',
                                 fontWeight: 600,
                                 background: 'rgba(16, 185, 129, 0.15)',
                                 color: '#6EE7B7',
                                 border: '1px solid rgba(16, 185, 129, 0.3)',
-                                padding: '2px 7px',
+                                padding: '2px 6px',
                                 borderRadius: '12px',
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
                               }}
                             >
-                              <span>⚡ Reaffirmed from Memory</span>
-                              <span>(+{deltaGain}%)</span>
+                              <Zap size={9} />
+                              Reaffirmed (+{deltaGain}%)
                             </span>
                           )}
                         </div>
 
-                        {/* Side by Side Comparison Row */}
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '12px', alignItems: 'center' }}>
-                          {/* Left: Cold Start */}
-                          <div style={{ background: '#0D0D10', border: '1px solid #1E1E24', borderRadius: '6px', padding: '8px 10px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#71717A', marginBottom: '3px' }}>
+                        {/* Comparison: stacked column — works on any screen width */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          {/* Cold Start */}
+                          <div style={compareCard}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#71717A', marginBottom: '4px' }}>
                               <span>Cold Start:</span>
                               <span style={{ color: '#A1A1AA', fontWeight: 600 }}>{confWithoutPct}%</span>
                             </div>
-                            <div style={{ width: '100%', height: '4px', background: '#27272A', borderRadius: '2px', overflow: 'hidden' }}>
-                              <div style={{ width: `${confWithoutPct}%`, height: '100%', background: '#71717A', borderRadius: '2px' }} />
+                            <div style={barTrack}>
+                              <div style={{ ...barFill, width: `${confWithoutPct}%`, background: '#52525B' }} />
                             </div>
-                            <div style={{ fontSize: '10px', color: '#52525B', marginTop: '4px' }}>
+                            <div style={{ fontSize: '10px', color: '#52525B', marginTop: '3px' }}>
                               Isolated reasoning without history
                             </div>
                           </div>
 
-                          {/* Center Arrow */}
+                          {/* Divider arrow */}
                           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3F3F46' }}>
-                            <ArrowRight size={14} />
+                            <ArrowDown size={12} />
                           </div>
 
-                          {/* Right: FalkorDB Memory */}
-                          <div style={{ background: '#0D0D10', border: '1px solid #1E1E24', borderRadius: '6px', padding: '8px 10px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#A78BFA', marginBottom: '3px' }}>
+                          {/* FalkorDB Memory */}
+                          <div style={{ ...compareCard, border: '1px solid rgba(167, 139, 250, 0.2)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#A78BFA', marginBottom: '4px' }}>
                               <span>With Temporal Memory:</span>
                               <span style={{ color: '#34D399', fontWeight: 700 }}>{confWithPct}%</span>
                             </div>
-                            <div style={{ width: '100%', height: '4px', background: '#27272A', borderRadius: '2px', overflow: 'hidden' }}>
-                              <div style={{ width: `${confWithPct}%`, height: '100%', background: '#34D399', borderRadius: '2px' }} />
+                            <div style={barTrack}>
+                              <div style={{ ...barFill, width: `${confWithPct}%`, background: '#34D399' }} />
                             </div>
-                            <div style={{ fontSize: '10px', color: '#34D399', marginTop: '4px' }}>
+                            <div style={{ fontSize: '10px', color: '#34D399', marginTop: '3px' }}>
                               +{deltaGain}% boost via temporal decay e^(-0.05*dt)
                             </div>
                           </div>

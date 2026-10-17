@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, AlertOctagon, Zap, GitBranch, Server, Link2, ShieldCheck } from 'lucide-react'
+import { X, AlertOctagon, Zap, GitBranch, Server, Link2, ShieldCheck, Loader2 } from 'lucide-react'
 import type { Finding, EvidenceResult } from '../types'
 import { api } from '../api/client'
 
@@ -75,6 +75,7 @@ export default function EvidenceModal({ finding, investigationId, onClose }: Evi
       {/* Modal box */}
       <div
         onClick={e => e.stopPropagation()}
+        className="evidence-modal-box"
         style={{
           background: '#111113',
           border: '1px solid #27272A',
@@ -132,8 +133,9 @@ export default function EvidenceModal({ finding, investigationId, onClose }: Evi
         <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '22px' }}>
 
           {loading && (
-            <div style={{ textAlign: 'center', color: '#52525B', fontSize: '12px', padding: '48px 0' }}>
-              Loading evidence from graph…
+            <div style={{ textAlign: 'center', color: '#71717A', fontSize: '12px', padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+              <Loader2 size={20} className="animate-spin" color="#06B6D4" />
+              <span>Loading evidence from graph…</span>
             </div>
           )}
 

@@ -20,10 +20,10 @@ interface NLQueryBarProps {
 }
 
 const PRESET_QUERIES = [
-  'What breaks if auth-service goes down?',
-  'Which services depend on auth-service?',
-  'What services are in platform tier?',
-  'Show all incidents affecting payment-service',
+  'What breaks if auth-service fails?',
+  'Services depending on auth-service',
+  'Platform tier services',
+  'Incidents affecting payment-service',
 ]
 
 // Known services in the 10-node RippleGraph topology
@@ -226,10 +226,19 @@ export default function NLQueryBar({
 
         {/* Quick query presets */}
         {!result && !error && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflowX: 'auto', paddingTop: '2px' }}>
-            <span style={{ fontSize: '11px', color: '#52525B', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
-              Suggestions:
-            </span>
+          <div
+            className="hide-scrollbar"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              overflowX: 'auto',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              paddingTop: '2px',
+            }}
+          >
+            
             {PRESET_QUERIES.map((pq, idx) => (
               <button
                 key={idx}

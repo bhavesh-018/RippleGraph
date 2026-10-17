@@ -5,11 +5,13 @@ import {
   BrainCircuit,
   GitCompare,
   History,
+  Loader2,
 } from 'lucide-react'
 import type { ChangeProposal } from '../types'
 import { api } from '../api/client'
 
 interface LeftPanelProps {
+  className?: string
   onRunInvestigation: (changeId: string, memoryEnabled: boolean) => void
   isRunning: boolean
   stage: string
@@ -20,6 +22,7 @@ interface LeftPanelProps {
 }
 
 export default function LeftPanel({
+  className = '',
   onRunInvestigation,
   isRunning,
   selectedChange,
@@ -90,7 +93,7 @@ export default function LeftPanel({
   const riskStyle = getRiskColor(currentChange?.risk_level || 'HIGH')
 
   return (
-    <aside className="left-panel">
+    <aside className={`left-panel ${className}`.trim()}>
       {/* Panel Header */}
       <div className="panel-header" style={{ padding: '12px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -365,7 +368,11 @@ export default function LeftPanel({
             transition: 'all 150ms ease',
           }}
         >
-          <Play size={14} fill="currentColor" />
+          {isRunning ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Play size={14} fill="currentColor" />
+          )}
           <span>{isRunning ? 'Simulating Rehearsal...' : 'Run Change Rehearsal'}</span>
         </button>
 

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Clock,
   RefreshCw,
@@ -85,7 +85,7 @@ export default function HistoryPanel({ onReplay, onClose, activeInvestigationId 
 
   return (
     <div style={s.overlay} onClick={onClose}>
-      <div style={s.modal} onClick={(e) => e.stopPropagation()}>
+      <div style={s.modal} className="history-panel-box" onClick={(e) => e.stopPropagation()}>
 
         {/* ── Header ── */}
         <div style={s.header}>
