@@ -12,6 +12,7 @@ import {
 import type { Finding, RedHerring } from '../types'
 
 interface RightPanelProps {
+  className?: string
   findings: Finding[]
   redHerrings?: RedHerring[]
   isRunning: boolean
@@ -30,6 +31,7 @@ interface RightPanelProps {
 }
 
 export default function RightPanel({
+  className = '',
   findings,
   redHerrings = [],
   isRunning,
@@ -46,7 +48,7 @@ export default function RightPanel({
   const compatibleCount = summary?.compatible ?? findings.filter(f => f.status?.toLowerCase() === 'compatible').length
 
   return (
-    <aside className="right-panel">
+    <aside className={`right-panel ${className}`.trim()}>
       {/* Panel Header */}
       <div className="panel-header" style={{ padding: '12px 16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

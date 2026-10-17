@@ -1,4 +1,5 @@
 import { useCallback, useState, useEffect, useRef } from 'react'
+import { Sliders, Network, ShieldAlert } from 'lucide-react'
 import './index.css'
 
 import TopNav from './components/TopNav'
@@ -20,6 +21,7 @@ function App() {
   const [selectedServiceId, setSelectedServiceId] = useState<string | undefined>(undefined)
   const [disconnectGraph, setDisconnectGraph] = useState(false)
   const [highlightedServiceIds, setHighlightedServiceIds] = useState<string[]>([])
+  const [activeMobileTab, setActiveMobileTab] = useState<'controls' | 'graph' | 'findings'>('graph')
 
   // Evidence modal state — null means closed
   const [evidenceFinding, setEvidenceFinding] = useState<Finding | null>(null)
@@ -129,6 +131,9 @@ function App() {
   }, [showToast])
 
   const handleRunInvestigation = useCallback((changeId: string, memoryEnabled: boolean) => {
+    if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+      setActiveMobileTab('graph')
+    }
     startStream({ changeId, memoryEnabled, disconnectGraph, paceDelayS: 0.35 })
   }, [startStream, disconnectGraph])
 
@@ -149,6 +154,7 @@ function App() {
 
       <div className="app-layout" style={{ flex: 1, height: 'calc(100vh - 48px)' }}>
         <LeftPanel
+          className={activeMobileTab === 'controls' ? 'mobile-tab-active' : 'mobile-tab-hidden'}
           onRunInvestigation={handleRunInvestigation}
           isRunning={isRunning}
           stage={stage}
@@ -158,7 +164,10 @@ function App() {
           onOpenHistory={() => setShowHistory(true)}
         />
 
-        <main className="center-panel" style={{ position: 'relative' }}>
+        <main
+          className={`center-panel ${activeMobileTab === 'graph' ? 'mobile-tab-active' : 'mobile-tab-hidden'}`.trim()}
+          style={{ position: 'relative' }}
+        >
           <NLQueryBar
             onHighlightServices={setHighlightedServiceIds}
             selectedChangeId={selectedChange?.id}
@@ -179,6 +188,7 @@ function App() {
         </main>
 
         <RightPanel
+          className={activeMobileTab === 'findings' ? 'mobile-tab-active' : 'mobile-tab-hidden'}
           findings={findings}
           redHerrings={[]}
           summary={summary}
@@ -191,6 +201,60 @@ function App() {
           onInspectFinding={setEvidenceFinding}
         />
       </div>
+
+      {/* Mobile Bottom Navigation Bar (< 1024px) */}
+      <nav className="mobile-nav-bar">
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeMobileTab === 'controls' ? 'active' : ''}`}
+          onClick={() => setActiveMobileTab('controls')}
+          aria-label="Controls Panel"
+        >
+          <Sliders size={18} />
+          <span>Controls</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeMobileTab === 'graph' ? 'active' : ''}`}
+          onClick={() => setActiveMobileTab('graph')}
+          aria-label="Graph View"
+        >
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Network size={18} />
+            {isRunning && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: -2,
+                  right: -4,
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: '#06B6D4',
+                  boxShadow: '0 0 6px #06B6D4',
+                }}
+              />
+            )}
+          </div>
+          <span>Graph</span>
+        </button>
+        <button
+          type="button"
+          className={`mobile-nav-btn ${activeMobileTab === 'findings' ? 'active' : ''}`}
+          onClick={() => setActiveMobileTab('findings')}
+          aria-label="Findings Panel"
+        >
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <ShieldAlert size={18} />
+            {findings.length > 0 && (
+              <span className="mobile-badge-count">
+                {findings.length}
+              </span>
+            )}
+          </div>
+          <span>Findings</span>
+        </button>
+      </nav>
 
       {/* Evidence Path Inspector Modal */}
       {evidenceFinding && investigationId && (

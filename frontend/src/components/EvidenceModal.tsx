@@ -75,6 +75,7 @@ export default function EvidenceModal({ finding, investigationId, onClose }: Evi
       {/* Modal box */}
       <div
         onClick={e => e.stopPropagation()}
+        className="evidence-modal-box"
         style={{
           background: '#111113',
           border: '1px solid #27272A',

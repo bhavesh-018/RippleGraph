@@ -21,14 +21,15 @@ export default function TopNav({
   onToggleDisconnectGraph,
 }: TopNavProps) {
   const stages = [
-    { id: 'investigator', name: 'Stage 1: Investigator' },
-    { id: 'memory', name: 'Stage 2: Memory' },
-    { id: 'reviewer', name: 'Stage 3: Reviewer' },
-    { id: 'persist', name: 'Stage 4: Persist' },
+    { id: 'investigator', name: 'Stage 1: Investigator', shortName: 'S1' },
+    { id: 'memory', name: 'Stage 2: Memory', shortName: 'S2' },
+    { id: 'reviewer', name: 'Stage 3: Reviewer', shortName: 'S3' },
+    { id: 'persist', name: 'Stage 4: Persist', shortName: 'S4' },
   ]
 
   return (
     <header
+      className="top-nav-header"
       style={{
         height: '48px',
         borderBottom: '1px solid #1F1F23',
@@ -103,7 +104,7 @@ export default function TopNav({
       </div>
 
       {/* 4-Stage Pipeline Progress Indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+      <div className="top-nav-stage-pipeline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
         {stages.map((s, index) => {
           const currentStageIndex = stages.findIndex((stg) => stage.toLowerCase().includes(stg.id))
           const isCurrent = isRunning && currentStageIndex === index
@@ -147,7 +148,8 @@ export default function TopNav({
               ) : (
                 <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#3F3F46' }} />
               )}
-              <span>{s.name}</span>
+              <span className="stage-name-desktop">{s.name}</span>
+              <span className="stage-name-mobile">{s.shortName}</span>
             </div>
           )
         })}
@@ -192,7 +194,8 @@ export default function TopNav({
           }}
         >
           <Database size={12} color={disconnectGraph ? '#EF4444' : '#10B981'} />
-          <span>{disconnectGraph ? 'FalkorDB: Offline' : 'FalkorDB: Connected'}</span>
+          <span className="desktop-label">{disconnectGraph ? 'FalkorDB: Offline' : 'FalkorDB: Connected'}</span>
+          <span className="mobile-label">{disconnectGraph ? 'Offline' : 'Online'}</span>
           <span
             style={{
               fontSize: '9px',
