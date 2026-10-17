@@ -165,7 +165,13 @@ def _create_finding_node(graph: Any, finding: Dict[str, Any]) -> None:
         f.hop_depth             = $hop_depth,
         f.recommended_contract_id = $recommended_contract_id,
         f.relevant_incidents    = $relevant_incidents,
-        f.created_at            = $created_at
+        f.created_at            = $created_at,
+        f.decayed_confidence    = $decayed_confidence,
+        f.days_old              = $days_old,
+        f.decay_factor          = $decay_factor,
+        f.reaffirmed            = $reaffirmed,
+        f.is_stale              = $is_stale,
+        f.staleness_reason      = $staleness_reason
     """
     graph.query(cypher, {
         "id": finding["id"],
@@ -182,6 +188,12 @@ def _create_finding_node(graph: Any, finding: Dict[str, Any]) -> None:
         "recommended_contract_id": finding.get("recommended_contract_id") or "",
         "relevant_incidents": incidents_json,
         "created_at": finding.get("created_at", ""),
+        "decayed_confidence": finding.get("decayed_confidence") if finding.get("decayed_confidence") is not None else -1.0,
+        "days_old": finding.get("days_old") if finding.get("days_old") is not None else -1.0,
+        "decay_factor": finding.get("decay_factor") if finding.get("decay_factor") is not None else -1.0,
+        "reaffirmed": bool(finding.get("reaffirmed", False)),
+        "is_stale": bool(finding.get("is_stale", False)),
+        "staleness_reason": finding.get("staleness_reason") or "",
     })
 
 

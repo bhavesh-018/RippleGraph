@@ -307,3 +307,107 @@ def test_apply_memory_no_prior_leaves_findings_unchanged():
     result = apply_memory_to_findings(current_findings, [])
     assert result[0]["confidence"] == 1.0
     assert len(result[0]["reasons"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Feature 4: Staleness detection and decay metadata propagation
+# ---------------------------------------------------------------------------
+
+def test_apply_memory_propagates_decay_metrics():
+    """Decay metrics (decayed_confidence, days_old, decay_factor) must propagate from prior finding."""
+    current_findings = [
+        {
+            "id": "FND-101",
+            "service_id": "payment-service",
+            "status": "incompatible",
+            "confidence": 0.85,
+            "reasons": ["Direct breaking change."],
+        }
+    ]
+    prior_findings = [
+        {
+            "id": "FND-PRIOR-01",
+            "service_id": "payment-service",
+            "investigation_id": "INV-PREV-01",
+            "status": "incompatible",
+            "decayed_confidence": 0.732,
+            "days_old": 5.4,
+            "decay_factor": 0.763,
+            "reaffirmed": False,
+        }
+    ]
+    result = apply_memory_to_findings(current_findings, prior_findings)
+    f = result[0]
+    assert f["decayed_confidence"] == 0.732
+    assert f["days_old"] == 5.4
+    assert f["decay_factor"] == 0.763
+    assert f["reaffirmed"] is True
+    assert f["is_stale"] is False
+
+
+def test_apply_memory_detects_staleness_when_incompatibility_resolved():
+    """When a prior finding was incompatible but the service is now compatible, flag as stale."""
+    current_findings = [
+        {
+            "id": "FND-102",
+            "service_id": "billing-service",
+            "status": "compatible",
+            "confidence": 0.90,
+            "reasons": ["All required claims satisfied."],
+        }
+    ]
+    prior_findings = [
+        {
+            "id": "FND-PRIOR-02",
+            "service_id": "billing-service",
+            "investigation_id": "INV-PREV-02",
+            "status": "incompatible",
+            "decayed_confidence": 0.65,
+            "days_old": 12.0,
+            "decay_factor": 0.548,
+            "reaffirmed": False,
+        }
+    ]
+    result = apply_memory_to_findings(current_findings, prior_findings)
+    f = result[0]
+    assert f["is_stale"] is True
+    assert f["reaffirmed"] is False
+    assert f["staleness_reason"] is not None
+    assert "resolved" in f["staleness_reason"].lower()
+
+
+def test_finding_node_schema_accepts_decay_and_staleness_fields():
+    """FindingNode Pydantic schema must validate all decay and staleness fields."""
+    from schemas.graph import FindingNode, ServiceEvaluationStatus
+
+    node = FindingNode(
+        id="FND-TEST-01",
+        investigation_id="INV-001",
+        service_id="auth-service",
+        service_name="Auth Service",
+        category="DIRECT_INCOMPATIBILITY",
+        status=ServiceEvaluationStatus.INCOMPATIBLE,
+        confidence=0.95,
+        decayed_confidence=0.72,
+        days_old=3.5,
+        decay_factor=0.83,
+        reaffirmed=True,
+        is_stale=False,
+        staleness_reason=None,
+    )
+    assert node.decayed_confidence == 0.72
+    assert node.days_old == 3.5
+    assert node.decay_factor == 0.83
+    assert node.reaffirmed is True
+    assert node.is_stale is False
+
+
+def test_pipeline_with_memory_populates_decay_fields():
+    """run_pipeline with memory_enabled=True must populate decay and staleness fields on findings."""
+    res = run_pipeline(change_id="CHG-001", memory_enabled=True)
+    findings = res["findings"]
+    assert len(findings) > 0
+    for f in findings:
+        assert "reaffirmed" in f
+        assert "is_stale" in f
+

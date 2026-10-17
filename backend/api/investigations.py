@@ -266,11 +266,14 @@ async def get_investigation(investigation_id: str):
     inv_id, change_id, change_title, status, memory_enabled, created_at = inv_res.result_set[0]
 
     # Fetch linked findings
+    import json as _json
     try:
         fnd_res = graph.query(
             "MATCH (inv:Investigation {id: $id})-[:PRODUCED]->(f:Finding) "
             "RETURN f.id, f.service_id, f.service_name, f.category, "
-            "       f.status, f.confidence, f.hop_depth, f.created_at "
+            "       f.status, f.confidence, f.hop_depth, f.created_at, "
+            "       f.reasons, f.missing_claims, f.decayed_confidence, f.days_old, "
+            "       f.decay_factor, f.reaffirmed, f.is_stale, f.staleness_reason "
             "ORDER BY f.confidence DESC",
             {"id": investigation_id},
         )
@@ -279,7 +282,25 @@ async def get_investigation(investigation_id: str):
 
     findings = []
     for row in fnd_res.result_set:
-        fnd_id, svc_id, svc_name, cat, st, conf, hop, fnd_at = row
+        (
+            fnd_id, svc_id, svc_name, cat, st, conf, hop, fnd_at,
+            raw_reasons, raw_missing, dec_conf, days_old, dec_factor, reaffirmed, is_stale, stale_reason
+        ) = row
+
+        reasons = []
+        if raw_reasons:
+            try:
+                reasons = _json.loads(raw_reasons) if isinstance(raw_reasons, str) else list(raw_reasons)
+            except Exception:
+                reasons = [str(raw_reasons)]
+
+        missing_claims = []
+        if raw_missing:
+            try:
+                missing_claims = _json.loads(raw_missing) if isinstance(raw_missing, str) else list(raw_missing)
+            except Exception:
+                missing_claims = [str(raw_missing)]
+
         findings.append({
             "id": fnd_id,
             "service_id": svc_id,
@@ -289,6 +310,14 @@ async def get_investigation(investigation_id: str):
             "confidence": float(conf) if conf else 0.0,
             "hop_depth": int(hop) if hop else 0,
             "created_at": fnd_at,
+            "reasons": reasons,
+            "missing_claims": missing_claims,
+            "decayed_confidence": float(dec_conf) if dec_conf is not None and dec_conf >= 0 else None,
+            "days_old": float(days_old) if days_old is not None and days_old >= 0 else None,
+            "decay_factor": float(dec_factor) if dec_factor is not None and dec_factor >= 0 else None,
+            "reaffirmed": bool(reaffirmed) if reaffirmed is not None else False,
+            "is_stale": bool(is_stale) if is_stale is not None else False,
+            "staleness_reason": stale_reason or None,
         })
 
     return {
