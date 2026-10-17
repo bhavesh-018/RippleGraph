@@ -5,6 +5,7 @@ import {
   BrainCircuit,
   GitCompare,
   History,
+  Loader2,
 } from 'lucide-react'
 import type { ChangeProposal } from '../types'
 import { api } from '../api/client'
@@ -365,7 +366,11 @@ export default function LeftPanel({
             transition: 'all 150ms ease',
           }}
         >
-          <Play size={14} fill="currentColor" />
+          {isRunning ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Play size={14} fill="currentColor" />
+          )}
           <span>{isRunning ? 'Simulating Rehearsal...' : 'Run Change Rehearsal'}</span>
         </button>
 

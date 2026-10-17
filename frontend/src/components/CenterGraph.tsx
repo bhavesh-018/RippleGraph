@@ -9,6 +9,7 @@ import ReactFlow, {
   type Edge,
 } from 'reactflow'
 import dagre from '@dagrejs/dagre'
+import { Loader2 } from 'lucide-react'
 import 'reactflow/dist/style.css'
 import ServiceNode from './ServiceNode'
 import { api } from '../api/client'
@@ -187,15 +188,18 @@ export default function CenterGraph({
         <div
           style={{
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
+            gap: '10px',
             height: '100%',
             color: '#71717A',
             fontFamily: 'var(--font-mono)',
             fontSize: '13px',
           }}
         >
-          Loading 10-Service Topology...
+          <Loader2 size={22} className="animate-spin" color="#06B6D4" />
+          <span>Loading 10-Service Topology...</span>
         </div>
       ) : (
         <ReactFlow

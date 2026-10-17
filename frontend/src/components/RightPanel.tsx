@@ -7,6 +7,7 @@ import {
   FilterX,
   Sparkles,
   Clock,
+  Loader2,
 } from 'lucide-react'
 import type { Finding, RedHerring } from '../types'
 
@@ -63,8 +64,12 @@ export default function RightPanel({
                 color: '#67E8F9',
                 padding: '2px 6px',
                 borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
               }}
             >
+              <Loader2 size={10} className="animate-spin" />
               INVESTIGATING
             </span>
           )}

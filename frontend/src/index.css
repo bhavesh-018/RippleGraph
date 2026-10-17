@@ -323,4 +323,22 @@ body {
   }
 }
 
+/* ── Spinner / Loader Animations ────────────────────────────────── */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin,
+.spin {
+  animation: spin 1s linear infinite !important;
+  transform-origin: center;
+  display: inline-block;
+  vertical-align: middle;
+}
+
 
