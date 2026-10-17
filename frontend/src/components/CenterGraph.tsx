@@ -211,6 +211,7 @@ export default function CenterGraph({
           fitViewOptions={{ padding: 0.15 }}
           minZoom={0.3}
           maxZoom={1.8}
+          proOptions={{ hideAttribution: true }}
         >
           <Background
             variant={BackgroundVariant.Dots}
