@@ -5,6 +5,8 @@ import {
   ShieldAlert,
   ShieldCheck,
   FilterX,
+  Sparkles,
+  Clock,
 } from 'lucide-react'
 import type { Finding, RedHerring } from '../types'
 
@@ -327,6 +329,90 @@ export default function RightPanel({
                         />
                       </div>
                     </div>
+
+                    {/* Memory Reaffirmation Badge */}
+                    {finding.reaffirmed && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          fontSize: '10px',
+                          background: 'rgba(16, 185, 129, 0.12)',
+                          border: '1px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: '4px',
+                          padding: '3px 8px',
+                          color: '#6EE7B7',
+                          fontFamily: 'var(--font-mono)',
+                          fontWeight: 600,
+                        }}
+                      >
+                        <Sparkles size={11} />
+                        <span>MEMORY RE-AFFIRMED</span>
+                        <span style={{ color: '#A1A1AA', fontWeight: 400 }}>• Boosted to {confPercent}%</span>
+                      </div>
+                    )}
+
+                    {/* Stale Finding Warning */}
+                    {finding.is_stale && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '3px',
+                          background: 'rgba(245, 158, 11, 0.12)',
+                          border: '1px solid rgba(245, 158, 11, 0.3)',
+                          borderRadius: '4px',
+                          padding: '4px 8px',
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            fontSize: '10px',
+                            color: '#FCD34D',
+                            fontFamily: 'var(--font-mono)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          <AlertTriangle size={11} />
+                          <span>STALE FINDING RESOLVED</span>
+                        </div>
+                        {finding.staleness_reason && (
+                          <div style={{ fontSize: '10px', color: '#FDE68A', lineHeight: 1.3 }}>
+                            {finding.staleness_reason}
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Mathematical Temporal Decay Pill */}
+                    {finding.decay_factor !== undefined && finding.decay_factor !== null && finding.days_old !== undefined && finding.days_old !== null && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          fontSize: '10px',
+                          fontFamily: 'var(--font-mono)',
+                          color: '#A1A1AA',
+                          background: 'rgba(255, 255, 255, 0.03)',
+                          border: '1px solid #27272A',
+                          borderRadius: '4px',
+                          padding: '3px 7px',
+                        }}
+                      >
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <Clock size={10} color="#71717A" />
+                          <span>Decay: e^(-0.05×{finding.days_old.toFixed(1)}d)</span>
+                        </span>
+                        <span style={{ color: '#06B6D4', fontWeight: 600 }}>
+                          ×{finding.decay_factor.toFixed(2)} factor
+                        </span>
+                      </div>
+                    )}
 
                     {/* Inspect Evidence button — only shown for real DB findings (not live-* SSE ones) */}
                     {onInspectFinding && investigationId && !finding.id.startsWith('live-') && (

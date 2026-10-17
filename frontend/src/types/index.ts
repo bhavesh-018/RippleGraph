@@ -84,6 +84,12 @@ export interface Finding {
   relevant_incidents?: string[]
   rejected_red_herrings?: string[]
   created_at?: string
+  decayed_confidence?: number | null
+  days_old?: number | null
+  decay_factor?: number | null
+  reaffirmed?: boolean
+  is_stale?: boolean
+  staleness_reason?: string | null
 }
 
 export interface RedHerring {
