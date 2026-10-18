@@ -8,8 +8,11 @@ import type {
   NLQueryResult,
 } from '../types'
 
+export const BACKEND = (import.meta.env.VITE_BACKEND_URL ?? '').replace(/\/+$/, '')
+
 async function fetchJSON<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(path, {
+  const url = `${BACKEND}${path}`
+  const res = await fetch(url, {
     headers: { 'Content-Type': 'application/json' },
     ...options,
   })

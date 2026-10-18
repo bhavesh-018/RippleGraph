@@ -60,7 +60,7 @@ export interface UseInvestigationStreamReturn {
   stopStream: () => void
 }
 
-const BACKEND = import.meta.env.VITE_BACKEND_URL ?? 'http://localhost:8000'
+const BACKEND = (import.meta.env.VITE_BACKEND_URL ?? '').replace(/\/+$/, '')
 
 let logCounter = 0
 

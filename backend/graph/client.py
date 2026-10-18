@@ -26,10 +26,16 @@ def _connect_with_retry(max_retries: int = 5, delay: float = 2.0) -> falkordb.Fa
     """Attempt to connect to FalkorDB with exponential backoff retry."""
     for attempt in range(1, max_retries + 1):
         try:
-            client = falkordb.FalkorDB(
-                host=settings.falkordb_host,
-                port=settings.falkordb_port,
-            )
+            connect_kwargs: dict = {
+                "host": settings.falkordb_host,
+                "port": settings.falkordb_port,
+            }
+            if settings.falkordb_password:
+                connect_kwargs["password"] = settings.falkordb_password
+            if settings.falkordb_username:
+                connect_kwargs["username"] = settings.falkordb_username
+
+            client = falkordb.FalkorDB(**connect_kwargs)
             # Verify connectivity with a lightweight ping
             client.connection.ping()
             logger.info(

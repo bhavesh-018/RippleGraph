@@ -10,6 +10,7 @@ import {
   Download,
 } from 'lucide-react'
 import type { Finding, RedHerring } from '../types'
+import { BACKEND } from '../api/client'
 
 interface RightPanelProps {
   className?: string
@@ -78,7 +79,7 @@ export default function RightPanel({
           )}
           {isComplete && investigationId && (
             <button
-              onClick={() => window.open(`/api/investigations/${investigationId}/checklist`)}
+              onClick={() => window.open(`${BACKEND}/api/investigations/${investigationId}/checklist`)}
               title="Download mitigation checklist as Markdown"
               style={{
                 display: 'flex',
