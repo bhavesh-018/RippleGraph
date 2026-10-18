@@ -4,7 +4,7 @@
 
 ---
 
-![RippleGraph Interface](https://raw.githubusercontent.com/bhavesh-018/RippleGraph/main/assets/ripplegraph_ui.jpg)
+*(Cover Image: Drag & drop assets/ripplegraph_ui.jpg here)*
 
 ## The 3:00 AM Microservice Nightmare
 
@@ -108,10 +108,9 @@ Any MCP-compliant client (such as Claude Desktop or custom LangGraph agents) can
 
 ---
 
-## Try RippleGraph Live!
+## Try RippleGraph!
 
-- 🌐 **Live Web Application:** [https://ripple-graph-eight.vercel.app](https://ripple-graph-eight.vercel.app)
-- 💻 **Open Source GitHub Repo:** [https://github.com/bhavesh-018/RippleGraph](https://github.com/bhavesh-018/RippleGraph)
+- 💻 **Open Source GitHub Repo:** [https://github.com/bhavesh-018/RippleGraph](https://github.com/bhavesh-018/RippleGraph) *(Live web app link is pinned in the README)*
 - 🎥 **YouTube Video Demo:** [Watch the 3-minute Walkthrough](https://www.youtube.com/watch?v=OKwlv2P6BrY)
 
 *Built with FalkorDB, FastAPI, React Flow, Gemini 2.0 Flash, and FastMCP for the Graph Hacks Hackathon 2026.*
