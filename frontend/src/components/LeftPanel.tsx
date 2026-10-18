@@ -267,35 +267,50 @@ export default function LeftPanel({
             padding: '10px 12px',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <BrainCircuit size={14} color="#A78BFA" />
-              <span style={{ fontSize: '11px', fontWeight: 600, color: '#F4F4F5' }}>Agent Memory</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0 }}>
+              <BrainCircuit size={14} color="#94A3B8" style={{ flexShrink: 0 }} />
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#F4F4F5', whiteSpace: 'nowrap' }}>Agent Memory</span>
             </div>
             <button
               type="button"
               onClick={() => setMemoryEnabled(!memoryEnabled)}
               disabled={isRunning}
+              title={memoryEnabled ? 'Memory Enabled (FalkorDB)' : 'Cold Start Mode'}
               style={{
-                background: memoryEnabled ? 'rgba(16, 185, 129, 0.2)' : '#27272A',
-                border: `1px solid ${memoryEnabled ? '#10B981' : '#3F3F46'}`,
-                color: memoryEnabled ? '#6EE7B7' : '#A1A1AA',
-                padding: '2px 7px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '5px',
+                background: memoryEnabled ? 'rgba(16, 185, 129, 0.12)' : '#1C1C1F',
+                border: `1px solid ${memoryEnabled ? 'rgba(16, 185, 129, 0.35)' : '#333338'}`,
+                color: memoryEnabled ? '#6EE7B7' : '#8E8E93',
+                padding: '2px 8px',
                 borderRadius: '12px',
                 fontSize: '10px',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 200ms ease',
+                cursor: isRunning ? 'not-allowed' : 'pointer',
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
+                transition: 'all 150ms ease',
               }}
             >
-              {memoryEnabled ? 'ON (FalkorDB)' : 'OFF (Cold Start)'}
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background: memoryEnabled ? '#10B981' : '#636366',
+                  display: 'inline-block',
+                }}
+              />
+              <span>{memoryEnabled ? 'ON' : 'OFF'}</span>
             </button>
           </div>
-          <p style={{ fontSize: '10.5px', color: '#71717A', lineHeight: 1.35, margin: 0 }}>
+          <p style={{ fontSize: '10.5px', color: '#71717A', lineHeight: 1.4, margin: 0, minHeight: '30px' }}>
             {memoryEnabled
-              ? 'Applies temporal decay formula e^(-0.05*dt) to prior findings in FalkorDB.'
-              : 'Evaluates change in cold-start mode with zero historical context.'}
+              ? 'Applies temporal decay e^(-0.05·t) to prior findings in FalkorDB.'
+              : 'Evaluates change in cold-start mode with zero prior history.'}
           </p>
 
           {/* Dual-Mode Memory Diff Trigger */}
@@ -312,11 +327,11 @@ export default function LeftPanel({
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '6px',
-                background: 'rgba(167, 139, 250, 0.1)',
-                border: '1px solid rgba(167, 139, 250, 0.3)',
+                background: '#18181B',
+                border: '1px solid #27272A',
                 borderRadius: '6px',
                 padding: '7px 10px',
-                color: '#DDD6FE',
+                color: '#E4E4E7',
                 fontSize: '11px',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 600,
@@ -324,13 +339,13 @@ export default function LeftPanel({
                 transition: 'all 150ms ease',
               }}
               onMouseEnter={(e) => {
-                if (!isRunning) e.currentTarget.style.background = 'rgba(167, 139, 250, 0.22)'
+                if (!isRunning) e.currentTarget.style.background = '#222226'
               }}
               onMouseLeave={(e) => {
-                if (!isRunning) e.currentTarget.style.background = 'rgba(167, 139, 250, 0.1)'
+                if (!isRunning) e.currentTarget.style.background = '#18181B'
               }}
             >
-              <GitCompare size={13} color="#A78BFA" />
+              <GitCompare size={13} color="#94A3B8" />
               <span>Compare Memory Impact</span>
             </button>
           )}

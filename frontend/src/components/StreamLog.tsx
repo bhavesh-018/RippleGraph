@@ -29,23 +29,23 @@ export default function StreamLog({
   const logTypeStyle = (type: string) => {
     switch (type) {
       case 'STAGE':
-        return { color: '#818CF8', bg: 'rgba(129, 140, 248, 0.12)', border: 'rgba(129, 140, 248, 0.3)' }
+        return { color: '#93C5FD', bg: 'rgba(59, 130, 246, 0.1)', border: 'rgba(59, 130, 246, 0.25)' }
       case 'DISCOVER':
-        return { color: '#06B6D4', bg: 'rgba(6, 182, 212, 0.12)', border: 'rgba(6, 182, 212, 0.3)' }
+        return { color: '#A1A1AA', bg: 'rgba(255, 255, 255, 0.05)', border: '#27272A' }
       case 'COMPAT':
-        return { color: '#10B981', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' }
+        return { color: '#10B981', bg: 'rgba(16, 185, 129, 0.1)', border: 'rgba(16, 185, 129, 0.25)' }
       case 'PATH':
-        return { color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)' }
+        return { color: '#F59E0B', bg: 'rgba(245, 158, 11, 0.1)', border: 'rgba(245, 158, 11, 0.25)' }
       case 'MEMORY':
-        return { color: '#A78BFA', bg: 'rgba(167, 139, 250, 0.12)', border: 'rgba(167, 139, 250, 0.3)' }
+        return { color: '#C4B5FD', bg: 'rgba(139, 92, 246, 0.1)', border: 'rgba(139, 92, 246, 0.25)' }
       case 'FINDING':
-        return { color: '#FB923C', bg: 'rgba(251, 146, 60, 0.12)', border: 'rgba(251, 146, 60, 0.3)' }
+        return { color: '#FB923C', bg: 'rgba(251, 146, 60, 0.1)', border: 'rgba(251, 146, 60, 0.25)' }
       case 'COMPLETE':
-        return { color: '#34D399', bg: 'rgba(52, 211, 153, 0.15)', border: 'rgba(52, 211, 153, 0.4)' }
+        return { color: '#34D399', bg: 'rgba(52, 211, 153, 0.12)', border: 'rgba(52, 211, 153, 0.3)' }
       case 'ERROR':
-        return { color: '#F87171', bg: 'rgba(248, 113, 113, 0.15)', border: 'rgba(248, 113, 113, 0.4)' }
+        return { color: '#F87171', bg: 'rgba(248, 113, 113, 0.12)', border: 'rgba(248, 113, 113, 0.3)' }
       default:
-        return { color: '#A1A1AA', bg: 'rgba(161, 161, 170, 0.1)', border: '#27272A' }
+        return { color: '#A1A1AA', bg: 'rgba(161, 161, 170, 0.08)', border: '#27272A' }
     }
   }
 
@@ -86,23 +86,21 @@ export default function StreamLog({
             padding: '6px 14px',
             background: 'rgba(12, 12, 15, 0.94)',
             backdropFilter: 'blur(12px)',
-            border: isRunning ? '1px solid rgba(6, 182, 212, 0.45)' : '1px solid #27272A',
+            border: isRunning ? '1px solid #3F3F46' : '1px solid #27272A',
             borderRadius: '20px',
             color: '#EDEDED',
             fontSize: '11.5px',
             fontFamily: 'var(--font-mono)',
             cursor: 'pointer',
-            boxShadow: isRunning
-              ? '0 6px 24px rgba(6, 182, 212, 0.16), 0 2px 8px rgba(0, 0, 0, 0.6)'
-              : '0 6px 20px rgba(0, 0, 0, 0.5)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5)',
             transition: 'all 200ms ease',
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = isRunning ? '#06B6D4' : '#3F3F46'
+            e.currentTarget.style.borderColor = '#52525B'
             e.currentTarget.style.background = 'rgba(20, 20, 26, 0.98)'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = isRunning ? 'rgba(6, 182, 212, 0.45)' : '#27272A'
+            e.currentTarget.style.borderColor = isRunning ? '#3F3F46' : '#27272A'
             e.currentTarget.style.background = 'rgba(12, 12, 15, 0.94)'
           }}
         >
@@ -111,7 +109,7 @@ export default function StreamLog({
             {isRunning ? (
               <span
                 className="pulse-dot"
-                style={{ background: '#06B6D4', width: '7px', height: '7px' }}
+                style={{ background: '#3B82F6', width: '7px', height: '7px' }}
               />
             ) : isComplete ? (
               <span
@@ -213,7 +211,7 @@ export default function StreamLog({
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Terminal size={14} color="#06B6D4" />
+              <Terminal size={14} color="#A1A1AA" />
               <span
                 style={{
                   fontSize: '11px',
@@ -241,8 +239,8 @@ export default function StreamLog({
               </span>
               {isRunning && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginLeft: '6px' }}>
-                  <span className="pulse-dot" style={{ background: '#06B6D4', width: '6px', height: '6px' }} />
-                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#06B6D4' }}>
+                  <span className="pulse-dot" style={{ background: '#3B82F6', width: '6px', height: '6px' }} />
+                  <span style={{ fontSize: '10px', fontFamily: 'var(--font-mono)', color: '#93C5FD' }}>
                     Streaming...
                   </span>
                 </div>

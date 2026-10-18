@@ -115,9 +115,9 @@ export default function TopNav({
           let borderColor = '#27272A'
 
           if (isCurrent) {
-            badgeColor = '#67E8F9'
-            badgeBg = 'rgba(6, 182, 212, 0.15)'
-            borderColor = '#06B6D4'
+            badgeColor = '#93C5FD'
+            badgeBg = 'rgba(59, 130, 246, 0.12)'
+            borderColor = '#3B82F6'
           } else if (isPassed) {
             badgeColor = '#6EE7B7'
             badgeBg = 'rgba(16, 185, 129, 0.15)'

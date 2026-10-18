@@ -264,46 +264,18 @@ body {
   animation: pulse-dot 1.2s ease-in-out infinite;
 }
 
-/* ── Live traversal: EVALUATING node border glow ─────────────────── */
-@keyframes node-glow {
+/* ── Live traversal: EVALUATING node subtle border pulse ─────────── */
+@keyframes node-evaluating {
   0%, 100% {
-    box-shadow:
-      0 0 0 0   rgba(6, 182, 212, 0),
-      0 0 8px  2px rgba(6, 182, 212, 0.25);
+    border-color: #3B82F6;
   }
   50% {
-    box-shadow:
-      0 0 0 3px rgba(6, 182, 212, 0.15),
-      0 0 20px 6px rgba(6, 182, 212, 0.45);
+    border-color: #60A5FA;
   }
 }
 
 .node-evaluating {
-  animation: node-glow 1.4s ease-in-out infinite;
-}
-
-/* ── Live traversal: scanning shimmer overlay ────────────────────── */
-@keyframes scan-shimmer {
-  0%   { transform: translateY(-100%); opacity: 0; }
-  20%  { opacity: 0.6; }
-  80%  { opacity: 0.6; }
-  100% { transform: translateY(200%); opacity: 0; }
-}
-
-.node-scan::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: 8px;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(6, 182, 212, 0.12) 50%,
-    transparent 100%
-  );
-  animation: scan-shimmer 1.8s ease-in-out infinite;
-  overflow: hidden;
+  animation: node-evaluating 1.4s ease-in-out infinite;
 }
 
 /* ── Live stream: finding card appear animation ──────────────────── */
@@ -455,7 +427,7 @@ body {
   }
 
   .mobile-nav-btn.active {
-    color: #06B6D4;
+    color: #EDEDED;
     font-weight: 600;
   }
 
@@ -466,7 +438,7 @@ body {
     left: 24%;
     right: 24%;
     height: 2px;
-    background: #06B6D4;
+    background: #EDEDED;
     border-radius: 2px;
   }
 

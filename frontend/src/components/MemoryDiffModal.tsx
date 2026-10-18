@@ -5,7 +5,6 @@ import {
   BrainCircuit,
   TrendingUp,
   ArrowDown,
-  Sparkles,
   RotateCcw,
   Zap,
 } from 'lucide-react'
@@ -279,8 +278,8 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
 
                   {/* FalkorDB */}
                   <div style={statCard}>
-                    <span style={{ ...statLabel, color: '#A78BFA' }}>FalkorDB</span>
-                    <div style={{ ...statValue, color: '#C4B5FD' }}>
+                    <span style={{ ...statLabel, color: '#E4E4E7' }}>FalkorDB</span>
+                    <div style={{ ...statValue, color: '#FFFFFF' }}>
                       {Math.round(data.summary.avg_confidence_with_memory * 100)}%
                     </div>
                     <span style={statSub}>Memory ON</span>
@@ -298,8 +297,8 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
 
                   {/* Reaffirmed */}
                   <div style={statCard}>
-                    <span style={{ ...statLabel, color: '#06B6D4' }}>Reaffirmed</span>
-                    <div style={{ ...statValue, color: '#67E8F9' }}>
+                    <span style={{ ...statLabel, color: '#3B82F6' }}>Reaffirmed</span>
+                    <div style={{ ...statValue, color: '#93C5FD' }}>
                       {data.summary.reaffirmed_count}/{data.summary.total_services_analyzed}
                     </div>
                     <span style={statSub}>Services</span>
@@ -312,16 +311,16 @@ export default function MemoryDiffModal({ changeId, onClose }: MemoryDiffModalPr
                     display: 'flex',
                     alignItems: 'flex-start',
                     gap: '8px',
-                    background: 'rgba(167, 139, 250, 0.08)',
-                    border: '1px solid rgba(167, 139, 250, 0.22)',
+                    background: '#16161A',
+                    border: '1px solid #27272A',
                     borderRadius: '6px',
                     padding: '8px 12px',
                     fontSize: '11.5px',
-                    color: '#DDD6FE',
+                    color: '#D4D4D8',
                     lineHeight: 1.45,
                   }}
                 >
-                  <Sparkles size={14} color="#A78BFA" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <BrainCircuit size={14} color="#A1A1AA" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>{data.summary.memory_verdict}</div>
                 </div>
               </div>
