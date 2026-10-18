@@ -15,7 +15,6 @@ import {
   AlertOctagon,
   AlertTriangle,
   CheckCircle2,
-  Sparkles,
 } from 'lucide-react'
 import type { ServiceData, NodeStatus } from '../types'
 
@@ -47,15 +46,15 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
   let StatusIcon: React.ComponentType<{ size?: number }> = CheckCircle2
 
   if (isHighlighted) {
-    borderColor = '#06B6D4'
-    statusBadgeBg = 'rgba(6, 182, 212, 0.2)'
-    statusBadgeText = '#67E8F9'
+    borderColor = '#3B82F6'
+    statusBadgeBg = 'rgba(59, 130, 246, 0.12)'
+    statusBadgeText = '#93C5FD'
     statusLabel = 'QUERY MATCH'
-    StatusIcon = Sparkles
+    StatusIcon = CheckCircle2
   } else if (isOrigin) {
-    borderColor = '#6366F1'
-    statusBadgeBg = 'rgba(99, 102, 241, 0.15)'
-    statusBadgeText = '#A5B4FC'
+    borderColor = '#60A5FA'
+    statusBadgeBg = 'rgba(96, 165, 250, 0.12)'
+    statusBadgeText = '#93C5FD'
     statusLabel = 'CHANGE ORIGIN'
     StatusIcon = Server
   } else if (status === 'INCOMPATIBLE') {
@@ -77,9 +76,9 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
     statusLabel = 'COMPATIBLE'
     StatusIcon = CheckCircle2
   } else if (status === 'EVALUATING') {
-    borderColor = '#06B6D4'
-    statusBadgeBg = 'rgba(6, 182, 212, 0.15)'
-    statusBadgeText = '#67E8F9'
+    borderColor = '#3B82F6'
+    statusBadgeBg = 'rgba(59, 130, 246, 0.12)'
+    statusBadgeText = '#93C5FD'
     statusLabel = 'EVALUATING...'
     StatusIcon = Server
   }
@@ -90,14 +89,14 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
   const tierStr = String(data.tier || 'core').toUpperCase()
 
   const boxShadow = isHighlighted
-    ? '0 0 16px rgba(6, 182, 212, 0.4), 0 0 0 2px #06B6D4'
+    ? '0 0 0 2px #3B82F6, 0 1px 3px rgba(0,0,0,0.4)'
     : selected
-    ? '0 0 0 2px #FFFFFF'
-    : '0 1px 4px rgba(0,0,0,0.4)'
+    ? '0 0 0 2px #FFFFFF, 0 1px 3px rgba(0,0,0,0.4)'
+    : '0 1px 3px rgba(0,0,0,0.3)'
 
   return (
     <div
-      className={isEvaluating ? 'node-evaluating node-scan' : isHighlighted ? 'node-pulse' : undefined}
+      className={isEvaluating ? 'node-evaluating' : undefined}
       style={{
         background: '#111113',
         border: `1.5px solid ${borderColor}`,
@@ -105,7 +104,7 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
         padding: '12px 14px',
         width: '240px',
         boxShadow,
-        transition: 'border-color 300ms ease, box-shadow 300ms ease',
+        transition: 'border-color 200ms ease, box-shadow 200ms ease',
         position: 'relative',
         cursor: 'pointer',
         overflow: 'hidden',
@@ -136,7 +135,7 @@ function ServiceNode({ data, selected }: NodeProps<ServiceData>) {
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: isOrigin ? '#818CF8' : status === 'INCOMPATIBLE' ? '#F87171' : '#E4E4E7',
+              color: isOrigin ? '#93C5FD' : status === 'INCOMPATIBLE' ? '#F87171' : '#E4E4E7',
             }}
           >
             <IconComponent size={16} />

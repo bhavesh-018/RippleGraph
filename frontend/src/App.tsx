@@ -228,8 +228,7 @@ function App() {
                   width: 6,
                   height: 6,
                   borderRadius: '50%',
-                  background: '#06B6D4',
-                  boxShadow: '0 0 6px #06B6D4',
+                  background: '#3B82F6',
                 }}
               />
             )}

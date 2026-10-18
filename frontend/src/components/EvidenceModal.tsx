@@ -134,7 +134,7 @@ export default function EvidenceModal({ finding, investigationId, onClose }: Evi
 
           {loading && (
             <div style={{ textAlign: 'center', color: '#71717A', fontSize: '12px', padding: '48px 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <Loader2 size={20} className="animate-spin" color="#06B6D4" />
+              <Loader2 size={20} className="animate-spin" color="#71717A" />
               <span>Loading evidence from graph…</span>
             </div>
           )}

@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react'
 import {
-  Sparkles,
   Search,
   Code,
   Copy,
@@ -125,7 +124,7 @@ export default function NLQueryBar({
         style={{
           background: 'rgba(17, 17, 20, 0.94)',
           backdropFilter: 'blur(16px)',
-          border: error ? '1px solid #EF4444' : result ? '1px solid #06B6D4' : '1px solid #27272A',
+          border: error ? '1px solid #EF4444' : result ? '1px solid #3F3F46' : '1px solid #27272A',
           borderRadius: expanded && result ? '12px 12px 0 0' : '12px',
           boxShadow: '0 8px 32px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05)',
           padding: '10px 14px',
@@ -144,12 +143,12 @@ export default function NLQueryBar({
               width: '26px',
               height: '26px',
               borderRadius: '6px',
-              background: 'rgba(6, 182, 212, 0.15)',
-              color: '#06B6D4',
+              background: 'rgba(255, 255, 255, 0.05)',
+              color: '#A1A1AA',
               flexShrink: 0,
             }}
           >
-            <Sparkles size={15} />
+            <Search size={15} />
           </div>
 
           <input
@@ -201,9 +200,9 @@ export default function NLQueryBar({
               gap: '6px',
               padding: '6px 14px',
               borderRadius: '6px',
-              border: 'none',
-              background: question.trim().length >= 5 ? '#06B6D4' : '#27272A',
-              color: question.trim().length >= 5 ? '#000000' : '#71717A',
+              border: '1px solid #3F3F46',
+              background: question.trim().length >= 5 ? '#EDEDED' : '#27272A',
+              color: question.trim().length >= 5 ? '#09090B' : '#71717A',
               fontSize: '12px',
               fontWeight: 600,
               cursor: question.trim().length >= 5 ? 'pointer' : 'not-allowed',
@@ -255,7 +254,7 @@ export default function NLQueryBar({
                   transition: 'all 120ms ease',
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = '#06B6D4'
+                  e.currentTarget.style.borderColor = '#3B82F6'
                   e.currentTarget.style.color = '#FFFFFF'
                 }}
                 onMouseLeave={(e) => {
@@ -301,7 +300,7 @@ export default function NLQueryBar({
           style={{
             background: 'rgba(13, 13, 16, 0.98)',
             backdropFilter: 'blur(16px)',
-            border: '1px solid #06B6D4',
+            border: '1px solid #3F3F46',
             borderTop: 'none',
             borderRadius: '0 0 12px 12px',
             padding: '12px 14px',
@@ -321,8 +320,8 @@ export default function NLQueryBar({
                   gap: '4px',
                   padding: '2px 8px',
                   borderRadius: '4px',
-                  background: 'rgba(6, 182, 212, 0.15)',
-                  color: '#06B6D4',
+                  background: 'rgba(59, 130, 246, 0.12)',
+                  color: '#93C5FD',
                   fontSize: '11px',
                   fontWeight: 600,
                   fontFamily: 'var(--font-mono)',

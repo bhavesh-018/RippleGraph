@@ -198,7 +198,7 @@ export default function CenterGraph({
             fontSize: '13px',
           }}
         >
-          <Loader2 size={22} className="animate-spin" color="#06B6D4" />
+          <Loader2 size={22} className="animate-spin" color="#71717A" />
           <span>Loading 10-Service Topology...</span>
         </div>
       ) : (
@@ -231,8 +231,8 @@ export default function CenterGraph({
           <MiniMap
             nodeColor={(n) => {
               const status = (n.data as ServiceData)?.status
-              if ((n.data as ServiceData)?.isOrigin) return '#6366F1'
-              if (status === 'EVALUATING') return '#06B6D4'
+              if ((n.data as ServiceData)?.isOrigin) return '#3B82F6'
+              if (status === 'EVALUATING') return '#60A5FA'
               if (status === 'INCOMPATIBLE') return '#EF4444'
               if (status === 'POTENTIAL' || status === 'POTENTIAL_DOWNSTREAM') return '#F59E0B'
               if (status === 'COMPATIBLE') return '#10B981'

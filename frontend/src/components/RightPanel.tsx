@@ -5,7 +5,6 @@ import {
   ShieldAlert,
   ShieldCheck,
   FilterX,
-  Sparkles,
   Clock,
   Loader2,
   Download,
@@ -63,8 +62,9 @@ export default function RightPanel({
                 fontFamily: 'var(--font-mono)',
                 fontSize: '9px',
                 fontWeight: 700,
-                background: 'rgba(6, 182, 212, 0.2)',
-                color: '#67E8F9',
+                background: 'rgba(59, 130, 246, 0.12)',
+                color: '#93C5FD',
+                border: '1px solid rgba(59, 130, 246, 0.25)',
                 padding: '2px 6px',
                 borderRadius: '4px',
                 display: 'flex',
@@ -345,7 +345,7 @@ export default function RightPanel({
                           fontWeight: 600,
                         }}
                       >
-                        <Sparkles size={11} />
+                        <ShieldCheck size={11} />
                         <span>MEMORY RE-AFFIRMED</span>
                         <span style={{ color: '#A1A1AA', fontWeight: 400 }}>• Boosted to {confPercent}%</span>
                       </div>
@@ -406,7 +406,7 @@ export default function RightPanel({
                           <Clock size={10} color="#71717A" />
                           <span>Decay: e^(-0.05×{finding.days_old.toFixed(1)}d)</span>
                         </span>
-                        <span style={{ color: '#06B6D4', fontWeight: 600 }}>
+                        <span style={{ color: '#E4E4E7', fontWeight: 600 }}>
                           ×{finding.decay_factor.toFixed(2)} factor
                         </span>
                       </div>
@@ -418,20 +418,26 @@ export default function RightPanel({
                         onClick={(e) => { e.stopPropagation(); onInspectFinding(finding) }}
                         style={{
                           alignSelf: 'flex-start',
-                          background: 'rgba(99,102,241,0.1)',
-                          border: '1px solid rgba(99,102,241,0.28)',
+                          background: 'transparent',
+                          border: '1px solid #3F3F46',
                           borderRadius: '4px',
                           padding: '3px 9px',
                           cursor: 'pointer',
-                          color: '#A5B4FC',
+                          color: '#D4D4D8',
                           fontFamily: 'var(--font-mono)',
                           fontSize: '10px',
-                          fontWeight: 600,
+                          fontWeight: 500,
                           marginTop: '2px',
-                          transition: 'background 150ms ease',
+                          transition: 'border-color 150ms ease, color 150ms ease',
                         }}
-                        onMouseEnter={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.2)')}
-                        onMouseLeave={e => (e.currentTarget.style.background = 'rgba(99,102,241,0.1)')}
+                        onMouseEnter={e => {
+                          e.currentTarget.style.borderColor = '#71717A'
+                          e.currentTarget.style.color = '#EDEDED'
+                        }}
+                        onMouseLeave={e => {
+                          e.currentTarget.style.borderColor = '#3F3F46'
+                          e.currentTarget.style.color = '#D4D4D8'
+                        }}
                       >
                         Inspect Evidence →
                       </button>
