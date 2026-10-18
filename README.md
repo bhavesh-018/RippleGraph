@@ -12,14 +12,14 @@
 
 ---
 
-## 🏆 Graph Hacks Submission Details
+## Graph Hacks Submission Details
 
 Built for **WeMakeDevs x FalkorDB Graph Hacks (2026)**.
 - **Track 01:** Agents That Act on Connected Data
 - **Track 02:** Agent Memory and Coordination
 
 ### 🎥 Live Video Demo
-👉 **[Watch the Complete Demo Video on YouTube](https://youtu.be/YOUR_VIDEO_LINK)** *(Replace with your link)*  
+👉 **[Watch the Complete Demo Video on YouTube](https://www.youtube.com/watch?v=OKwlv2P6BrY)** 
 *No slides. 100% working software demonstration with live Proof Mode toggle and episodic memory diffs.*
 
 **Video Chapters:**
@@ -33,7 +33,7 @@ Built for **WeMakeDevs x FalkorDB Graph Hacks (2026)**.
 
 ---
 
-## 🚨 The Problem
+## The Problem
 
 Modern autonomous coding agents can refactor code, but **LLMs are blind to transitive ripple effects across distributed systems.**
 When `auth-service` alters a JWT claim (`sub` $\rightarrow$ `subject_id`), direct consumers might be warned — but `checkout-gateway`, which depends on `order-service`, which depends on `payment-service`, which depends on `auth-service`, silently breaks 3 hops downstream.
@@ -44,7 +44,7 @@ When `auth-service` alters a JWT claim (`sub` $\rightarrow$ `subject_id`), direc
 
 ---
 
-## 💡 The Solution: FalkorDB as the Agent Context Layer
+## The Solution: FalkorDB as the Agent Context Layer
 
 RippleGraph puts the microservice topology, API contracts, incident history, and agent findings into **FalkorDB**. 
 Rather than guessing, a coordinated team of 4 specialized agents navigates graph edges via sub-millisecond Cypher queries to compute blast radius, verify contracts, and learn from past outages.
@@ -72,7 +72,7 @@ Rather than guessing, a coordinated team of 4 specialized agents navigates graph
 
 ---
 
-## 🗺️ Graph Data Model
+## Graph Data Model
 
 The graph acts as the single source of truth for both structural infrastructure and dynamic agent memory.
 
@@ -111,7 +111,7 @@ graph TD
 
 ---
 
-## 🛡️ Show the Graph Doing the Work (Hackathon Rule 3 Proof)
+## Show the Graph Doing the Work (Hackathon Rule 3 Proof)
 
 Hackathon Rule 3 states: *"The graph has to do real work. If the product still works once FalkorDB is taken out, the graph is decoration."*
 
@@ -127,7 +127,7 @@ RippleGraph includes a live **Proof Mode Toggle** in the navigation bar. When to
 
 ---
 
-## 🧠 Track 02: Episodic Memory & Temporal Decay
+## Track 02: Episodic Memory & Temporal Decay
 
 RippleGraph does not store conversational transcripts in flat files. Past rehearsals are committed directly into FalkorDB as `(:Investigation)` and `(:Finding)` nodes.
 
@@ -147,7 +147,7 @@ When an agent runs a new rehearsal:
 
 ---
 
-## ⚡ Model Context Protocol (FastMCP)
+## Model Context Protocol (FastMCP)
 
 RippleGraph exposes a native FastMCP server (`backend/mcp_server.py`), allowing external developer AI tools (Cursor, Claude Desktop) to invoke graph tools directly during code generation:
 
@@ -158,7 +158,7 @@ RippleGraph exposes a native FastMCP server (`backend/mcp_server.py`), allowing 
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Local Setup (Quickest)
 
@@ -199,7 +199,7 @@ RippleGraph exposes a native FastMCP server (`backend/mcp_server.py`), allowing 
 
 ---
 
-## 📜 AI Usage Disclosure (Rule 11)
+## AI Usage Disclosure (Rule 11)
 
 In compliance with **Hackathon Rule 11**:
 - **Human Authorship**: The team designed the core product architecture, multi-agent coordination protocol, graph schema, Cypher queries, Proof Mode concept, and UI interactions.
