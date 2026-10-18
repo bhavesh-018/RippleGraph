@@ -36,6 +36,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     hc = health_check()
     if hc.get("falkordb") == "ok":
         logger.info("FalkorDB connection healthy. Connected to graph: %s", hc.get("graph"))
+        try:
+            from graph.client import get_graph
+            from graph.seed import seed
+            g = get_graph()
+            res = g.query("MATCH (s:Service) RETURN count(s) AS cnt")
+            count = res.result_set[0][0] if res.result_set else 0
+            if count == 0:
+                logger.info("FalkorDB graph is empty (0 services). Auto-seeding initial topology...")
+                seed(skip_verification=True)
+                logger.info("FalkorDB graph successfully auto-seeded.")
+            else:
+                logger.info("FalkorDB graph already seeded with %d services.", count)
+        except Exception as e:
+            logger.error("Auto-seeding check failed: %s", e)
     else:
         logger.warning("FalkorDB connection check failed: %s", hc.get("detail"))
     yield
@@ -85,3 +99,20 @@ async def health():
         "status": "healthy" if is_healthy else "degraded",
         **status,
     }
+
+
+@app.get("/api/seed/reset", tags=["Seed"])
+@app.post("/api/seed/reset", tags=["Seed"])
+async def trigger_seed():
+    """Seed or reset the FalkorDB graph database with the complete 10-service topology."""
+    try:
+        from graph.seed import seed
+        seed(skip_verification=True)
+        return {
+            "status": "success",
+            "message": "FalkorDB graph seeded successfully with 10 services and topology.",
+        }
+    except Exception as e:
+        logger.error("Seeding endpoint failed: %s", e)
+        return {"status": "error", "message": str(e)}
+
