@@ -4,7 +4,7 @@
 
 ---
 
-![RippleGraph Banner](https://raw.githubusercontent.com/bhavesh-018/RippleGraph/main/frontend/public/vite.svg)
+![RippleGraph Interface](https://raw.githubusercontent.com/bhavesh-018/RippleGraph/main/assets/ripplegraph_ui.jpg)
 
 ## The 3:00 AM Microservice Nightmare
 
